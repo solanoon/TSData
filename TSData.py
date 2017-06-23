@@ -220,8 +220,8 @@ class TSData:
         self.sep=','
         with open(path, "r") as f:
             l = f.readline() + f.readline() + f.readline()
-            self.df_meta = pd.read_csv(StringIO(unicode(l)), sep=self.sep)
-            self.df = pd.read_csv(StringIO(unicode(f.read())), sep=self.sep)
+            self.df_meta = pd.read_csv(StringIO(unicode(l)), sep=self.sep, index_col=0)
+            self.df = pd.read_csv(StringIO(unicode(f.read())), sep=self.sep, index_col=0, header=None)
 
 
     # @description save as TS file format
