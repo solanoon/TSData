@@ -1,6 +1,6 @@
 import TSData
 import os
-from wigwams.scrips import wigwams_wrapper
+from wigwams.scripts import wigwams_wrapper
 #import unittest.mock
 from mock import patch
 
