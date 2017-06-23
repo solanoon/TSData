@@ -162,7 +162,7 @@ class TSData:
                 # TODO merge matrix with previous one
                 self.df = pd.read_csv(StringIO(mat_data), sep=self.sep)
             elif (sectionname == "###TSDataEvent"):
-                print("###TSDataEvent section is not currently supporting, sorry.")
+                print("###TSDataEvent section is not currently supported, sorry.")
 
 
         self.cur_path = path
@@ -214,9 +214,14 @@ class TSData:
             raise Exception('DataHeader and DataMatrix column count is different!')
 
 
-    # load data from general CSV file
+    # load data from CSV file (Header: SampleID, CID, Time)
     def load_csv(self, path):
-        pass
+        self.cur_path = path
+        self.sep=','
+        with open(path, "r") as f:
+            l = f.readline() + f.readline() + f.readline()
+            self.df_meta = pd.read_csv(StringIO(f.read()), sep=self.sep)
+            self.df = pd.read_csv(f, sep=self.sep)
 
 
     # @description save as TS file format
