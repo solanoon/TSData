@@ -222,6 +222,7 @@ class TSData:
             l = f.readline() + f.readline() + f.readline()
             self.df_meta = pd.read_csv(StringIO(unicode(l)), sep=self.sep, index_col=0)
             self.df = pd.read_csv(StringIO(unicode(f.read())), sep=self.sep, index_col=0, header=None)
+            self.df.columns = self.df_meta.columns  # fit column for same
 
 
     # @description save as TS file format
@@ -279,7 +280,7 @@ class TSData:
     # -------------------------
 
     # @description Merge other TS object into current one.
-    def Merge(self, ts):
+    def merge(self, ts):
         # raise error if row index(genename) set is different
         if (self.df.index != ts.df.index):
             raise Exception("row index(genename) set is different")
@@ -289,7 +290,7 @@ class TSData:
     # @description flatten replicated TS column into single one
     # (in case of replication is unsupported, ex: wigwams)
     # @argument func: first / avg(default) / max / min
-    def FlattenRep(self, func='avg'):
+    def flatten_replication(self, func='avg'):
         def removeduplicated(a):
             r = []
             for e in a:
@@ -329,6 +330,9 @@ class TSData:
         # use result
         self.df = n_df
         self.df_meta = n_dfh
+
+    def rescale_replication(self):
+        raise Exception("replication rescaling is not supported now!")
 
     # @description split this timeseries from CID
     # in case of program requires each condition as separated file (ex: EDISA)
@@ -375,6 +379,12 @@ class TSData:
         tsd.df_meta = self.df_meta[sid_group]
         tsd.df = self.df[sid_group]
         return tsd
+
+    def RemoveByCID(self, cid_group):
+        raise Exception('not supported yet')
+
+    def RemoveBySampleID(self, sid_group):
+        raise Exception('not supported yet')
 
     #
     # depreciated

@@ -12,14 +12,28 @@ import sys
 
 class TSExpWigwams(TSData.TSExp):
     def __init__(self, tsd, workdir):
-        self.tsd = tsd
+        self.tsd = tsd  # TODO: copy
+        self.replication = "flatten"
         TSData.TSExp.expname = "wigwams"
         TSData.TSExp.desc = "All time replication are averaged as wigwams doesn't supports replication."
         TSData.TSExp.workdir = workdir
 
+    # "flatten", "rescale", "none"
+    def SetReplicationProcess(replication):
+        self.replication = replication
+
     def run(self):
         # tidy tsd data into wigwams input format
         wigwams_input_path = os.path.join(TSData.TSExp.workdir, 'wigwams_input.csv')
+        # must process replication
+        if (self.replication == "flatten"):
+            self.tsd.flatten_replication()
+        elif (self.replication == "rescale"):
+            self.tsd.rescale_replication()
+        elif (self.replication == "none"):
+            pass
+        else:
+            raise Exception("Unknown replication process command: %s" % self.replication) 
         with open(wigwams_input_path, 'w') as f:
             # drop a row - SampleID (header)
             df_meta_2 = self.tsd.df_meta
