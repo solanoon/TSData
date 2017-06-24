@@ -10,9 +10,17 @@ import os
 class TSSplitter:
     def __init__(self):
         self.df = None
+        self.groups = []
 
     def LoadMatrix(self, path):
         self.df = pd.read_csv(path,header=0,index_col=0)
+
+    def LoadGroup_csv(self, path):
+        pass
+
+    # @description depreciated, should use LoadGroup.
+    def LoadSample_csv(self, path):
+        pass
 
     # @description
     # Extract microarray file from big-microarray file using TS metadata.
