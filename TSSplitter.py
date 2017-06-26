@@ -47,7 +47,8 @@ class TSSplitter:
     # @description for depreciated LoadGroup method.
     def LoadSample_csv(self, path):
         def gene_sorter(e):
-            t_ = (12-len(e[1]))*'0' + e[1]
+            ts = str(e[1])
+            t_ = (12-len(ts))*'0' + ts
             return t_ + '_' + str(e[2])
 
         csv_df = pd.read_csv(path, index_col=False, header=0) # 1: SampleID, 3: CID
@@ -65,7 +66,7 @@ class TSSplitter:
             ignore_list = (csv_cond.ix[:,5].isnull())
             # sort with rep/time
             geneinfo = zip(genelist, time, rep, ignore_list)
-            geneinfo = filter(lambda x: x[3], geneinfo) # filter invalid genes
+            geneinfo = filter(lambda x: not x[3], geneinfo) # filter invalid genes
             geneinfo.sort(key=gene_sorter)
             group['geneinfo'] = geneinfo
 
@@ -77,6 +78,8 @@ class TSSplitter:
     def Extract(self, tsd, exactname=False, includedf=False):
         if (self.df.empty):
             raise Exception("Must LoadMatrix(...) first")
+        if (tsd.df_meta.empty):
+            raise Exception("Not allow empty dataframe (GENENAME info necessary)")
 
         # read TSdata (should include only header file)
         #tsd = TSData.TSData()
@@ -88,10 +91,10 @@ class TSSplitter:
 
         df_out = None
         if (exactname):
-            df_out = self.df[TSpath.df.index]
+            df_out = self.df[tsd.df_meta.columns]
         else:
             col_valid = []
-            col_target = [s.upper() for s in list(TSpath.df.index)]
+            col_target = [s.upper() for s in list(tsd.df_meta.columns)]
             col_valid_cnt = 0
             for col in tsd.df.index:
                 col_up = col.upper()
@@ -125,12 +128,16 @@ class TSSplitter:
     def ExtractAll(self, outdir="./", included=False):
         for CID,group in self.groups.items():
             # generate df_meta
-            genenames = map(lambda x: x[0], group)
-            df_meta = pd.DataFrame(index=['SampleID','CID','Time'],columns=genenames)
+            genenames = map(lambda x: x[0], group['geneinfo'])
+            if (len(genenames) == 0):
+                print "%s CID has no genes, ignored" % CID
+                continue
+            df_meta = pd.DataFrame(index=['CID','Time'],columns=genenames)
+            df_meta.index.name = 'SampleID'
             for genename,time,rep,valid in group['geneinfo']:
                 df_meta[genename] = [CID, time]
             # make TSData
-            tsdat = TSData()
+            tsdat = TSData.TSData()
             tsdat.df_meta = df_meta
             tsdat.metadata['name'] = CID
             tsdat.metadata['date'] = group['Date']
@@ -139,6 +146,8 @@ class TSSplitter:
             tsdat.metadata['desc'] = group['Desc']
             # extract df
             self.Extract(tsdat)
+            print df_meta.columns
+            print tsdat.df.columns
             tsdat.save()
 
 
