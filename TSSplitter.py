@@ -126,6 +126,7 @@ class TSSplitter:
                 os.path.dirname(TSpath) + "/" + os.path.splitext(fn)[0] + '.txt',
                 sep='\t'
                 )
+        return True
 
     # creates multiple csv file, maybe
     # @argument
@@ -150,9 +151,9 @@ class TSSplitter:
             tsdat.metadata['type'] = group['Type']
             tsdat.metadata['desc'] = group['Desc']
             # extract df
-            self.Extract(tsdat, True)
-            print df_meta.columns
-            print tsdat.df.columns
-            tsdat.save(os.path.join(outdir,"%s.tsd"%CID))
+            if (self.Extract(tsdat, True)):
+                print df_meta.columns
+                print tsdat.df.columns
+                tsdat.save(os.path.join(outdir,"%s.tsd"%CID))
 
 
