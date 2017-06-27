@@ -75,7 +75,7 @@ class TSSplitter:
     # @argument
     # if exactname false, then it'll no-case-sensitive, startswith character.
     # if includedf true, then TS will be resaved. else, extract microarray file will be saved.
-    def Extract(self, tsd, exactname=False, includedf=False):
+    def Extract(self, tsd, includedf=False, exactname=False):
         if (self.df.empty):
             raise Exception("Must LoadMatrix(...) first")
         if (tsd.df_meta.empty):
@@ -93,23 +93,28 @@ class TSSplitter:
         if (exactname):
             df_out = self.df[tsd.df_meta.columns]
         else:
-            col_valid = []
+            col_valid_gn = []
+            col_valid_b = []
             col_target = [s.upper() for s in list(tsd.df_meta.columns)]
-            col_valid_cnt = 0
-            for col in tsd.df.index:
+            col_available = self.df.columns
+            for col in col_available:
                 col_up = col.upper()
                 col_res = False
                 for col_comp in col_target:
                     if (col_up.startswith(col_comp)):
+                        col_valid_gn.append(col_up)
                         col_res = True
-                        col_valid_cnt += 1
                         break
-                col_valid.append(col_res)
-            if (col_valid_cnt < col_target):
-                raise Exception("Not all columns included in matrix file")
-            elif (col_valid_cnt > col_target):
+                col_valid_b.append(col_res)
+            if (len(col_valid_gn) < len(col_target)):
+                print col_target
+                print 'available', len(col_available)
+                print col_valid_gn
+                return False
+                #raise Exception("Not all columns included in matrix file")
+            elif (len(col_valid_gn) > len(col_target)):
                 raise Exception("Too many columns selected; maybe invalid filter")
-            df_out = self.df.loc[:,col_valid]
+            df_out = self.df.loc[:,col_valid_b]
 
         # in case of includedf
         if (includedf):
@@ -145,9 +150,9 @@ class TSSplitter:
             tsdat.metadata['type'] = group['Type']
             tsdat.metadata['desc'] = group['Desc']
             # extract df
-            self.Extract(tsdat)
+            self.Extract(tsdat, True)
             print df_meta.columns
             print tsdat.df.columns
-            tsdat.save()
+            tsdat.save(os.path.join(outdir,"%s.tsd"%CID))
 
 

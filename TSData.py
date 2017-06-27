@@ -234,14 +234,14 @@ class TSData:
         self.cur_path = path
         
         with open(path, "w") as f:
-            f.write('###TSData,0.1')
-            f.write( json.dumps(self.metadata ) )
-            f.write('###TSDataCondition')
+            f.write('###TSData,0.1\n')
+            f.write( json.dumps(self.metadata )+'\n' )
+            f.write('###TSDataCondition\n')
             # TODO write conditions
-            f.write('###TSDataHeader')
-            f.write( self.df_head.to_csv() )
+            f.write('###TSDataHeader\n')
+            f.write( self.df_meta.to_csv() )
             if (self.metadata['dfpath'] == None):
-                f.write('###TSDataMatrix')
+                f.write('###TSDataMatrix\n')
                 f.write( self.df.to_csv() ) 
             f.close()
 
