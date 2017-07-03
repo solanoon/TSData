@@ -15,6 +15,9 @@ class TSSplitter:
     def LoadMatrix(self, path, sep="\t"):
         self.df = pd.read_csv(path,header=0,index_col=0,sep=sep)
 
+    # requires in row:
+    # csv column:  CID, Species, Stress, Tissue, Genotype
+    # csv column:  (optional) Expid, Date, Source ,Type, Desc
     def LoadGroup_csv(self, path):
         csv_df = pd.read_csv(path, index_col=False, header=0)
         for idx, row in csv_df.iterrows():
@@ -23,6 +26,8 @@ class TSSplitter:
             TSSource = None
             TSType = 'CEL'
             TSDesc = ''
+            TSExpid = None
+            CID = row['CID'][0]
             if ('Date' in row):
                 TSDate = row['Date'][0]
             if ('Source' in row):
@@ -31,12 +36,14 @@ class TSSplitter:
                 TSType = row['Type'][0]
             if ('Desc' in row):
                 TSDesc = row['Desc'][0]
-            self.groups[ row[[0]][0] ] = {
-                'Species': row[[1]][0],
-                'Stress': row[[2]][0],
-                'Tissue': row[[6]][0],
-                'Genotype': row[[8]][0],
-                'Expid': row[[10]][0],
+            if ('Expid' in row):
+                TSExpid = row['Expid'][0]
+            self.groups[ CID ] = {
+                'Species': row['Species'][0],
+                'Stress': row['Stress'][0],
+                'Tissue': row['Tissue'][0],
+                'Genotype': row['Genotype'][0],
+                'Expid': TSExpid,
                 'Date': TSDate,
                 'Source': TSSource,
                 'Type': TSType,
@@ -45,6 +52,8 @@ class TSSplitter:
                 }
 
     # @description for depreciated LoadGroup method.
+    # csv column requires: CID, GeneID, Time, (optional)Valid
+    # (don't use replication count/index data)
     def LoadSample_csv(self, path):
         def gene_sorter(e):
             ts = str(e[1])
@@ -52,21 +61,25 @@ class TSSplitter:
             return t_ + '_' + str(e[2])
 
         csv_df = pd.read_csv(path, index_col=False, header=0) # 1: SampleID, 3: CID
-        CIDs = list(set(csv_df.ix[:,2].tolist()))
+        CIDs = list(set(csv_df.ix[:,'CID'].tolist()))
         for CID in CIDs:
             if (CID not in self.groups):
                 print '%s CID not exists, ignore.' % CID
                 continue
             group = self.groups[CID]
-            b_CID = csv_df.ix[:,2] == CID
+            b_CID = csv_df.ix[:,'CID'] == CID
             csv_cond = csv_df[b_CID]
-            genelist = csv_cond.ix[:,0].tolist()
-            rep = csv_cond.ix[:,5].fillna(0).tolist()   # fill NA for use
-            time = csv_cond.ix[:,10].fillna(0).tolist()
-            ignore_list = (csv_cond.ix[:,5].isnull())
+            genelist = csv_cond.ix[:,'GeneID'].tolist()
+            #rep = csv_cond.ix[:,5].fillna(0).tolist()   # fill NA for use
+            idx = range(len(genelist))  # used for sorting index (for replication-order consistency)
+            time = csv_cond.ix[:,'Time'].fillna(0).tolist()
+            if ('Valid' in csv_cond.columns):
+                ignore_list = (csv_cond.ix[:,'Valid'].isnull())
+            else:
+                ignore_list = [False] * len(genelist)
             # sort with rep/time
-            geneinfo = zip(genelist, time, rep, ignore_list)
-            geneinfo = filter(lambda x: not x[3], geneinfo) # filter invalid genes
+            geneinfo = zip(genelist, time, idx, ignore_list)
+            geneinfo = filter(lambda x: not x[2], geneinfo) # filter invalid genes
             geneinfo.sort(key=gene_sorter)
             group['geneinfo'] = geneinfo
 
@@ -81,10 +94,10 @@ class TSSplitter:
         if (tsd.df_meta.empty):
             raise Exception("Not allow empty dataframe (GENENAME info necessary)")
 
-        # read TSdata (should include only header file)
-        #tsd = TSData.TSData()
-        #tsd.load(TSpath)
         """
+        # read TSdata (should include only header file)
+        tsd = TSData.TSData()
+        tsd.load(TSpath)
         if (tsd.metadata['dfpath'] == None):
             raise Exception("Should only use TSdata without microarray-less data")
         """
@@ -93,6 +106,7 @@ class TSSplitter:
         if (exactname):
             df_out = self.df[tsd.df_meta.columns]
         else:
+            # extract valid column name
             col_valid_gn = []
             col_valid_b = []
             col_target = [s.upper() for s in list(tsd.df_meta.columns)]
@@ -114,6 +128,7 @@ class TSSplitter:
                 #raise Exception("Not all columns included in matrix file")
             elif (len(col_valid_gn) > len(col_target)):
                 raise Exception("Too many columns selected; maybe invalid filter")
+            # extract dataframe
             df_out = self.df.loc[:,col_valid_b]
 
         # in case of includedf
@@ -128,7 +143,7 @@ class TSSplitter:
                 )
         return True
 
-    # creates multiple csv file, maybe
+    # creates multiple csv file
     # @argument
     # include: include microarray data into TS file. if not, generate separate microarray file
     def ExtractAll(self, outdir="./", included=False):
@@ -150,6 +165,13 @@ class TSSplitter:
             tsdat.metadata['source'] = group['Source']
             tsdat.metadata['type'] = group['Type']
             tsdat.metadata['desc'] = group['Desc']
+            # make TSCondition
+            cond = tsdat.getCondition(CID)
+            cond.SetStress(group['Stress'])
+            cond.species = group['Species']
+            cond.tissue = group['Tissue']
+            cond.datatype = group['Type']
+            cond.genotype = group['Genotype']
             # extract df
             if (self.Extract(tsdat, True)):
                 print df_meta.columns

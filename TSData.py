@@ -47,14 +47,10 @@ class TSCondition():
     def __init__(self):
         # string desc (Should be filled)
         self.species = None     # Arabidopsis, Oryza sativa, ...
+        self.tissue = None
         self.datatype = 'CEL'
-        self.tissue = None      # Leaf, Root, ...
-        self.genotype = None    # WT(None) or (modified genename)
-        self.age = None         # organ age (None if not provided)
-        # None or valid desc
-        self.temp = None        # temperature (ex: Hot_24, Cold_4, Cold, ...)
-        self.water = None       # watering level (Drought, ...)
-        self.nutrition = None   # food/nutrition level
+        self.genotype = 'WT'
+        self.stress = []        # kind of 'tag'
 
     def __repr__(self):
         #return self.__dict__
@@ -63,29 +59,19 @@ class TSCondition():
             'tissue': self.tissue,
             'datatype': self.datatype,
             'genotype': self.genotype,
-            'age': self.age,
-            'temp': self.temp,
-            'water': self.water,
-            'nutrition': self.nutrition,
+            'stress': self.stress,
             }
 
-    def Set(self, key, value):
-        if (key == 'species'):
-            self.species = value
-        elif (key == 'datatype'):
-            self.datatype = value
-        elif (key == 'tissue'):
-            self.tissue = value
-        elif (key == 'genotype'):
-            self.genotype = value
-        elif (key == 'age'):
-            self.age = value
-        elif (key == 'temp'):
-            self.temp = value
-        elif (key == 'water'):
-            self.water = value
-        elif (key == 'nutrition'):
-            self.nutrition = value
+    # load from json dict array
+    def Set(self, d):
+        self.species = d['species']
+        self.tissue = d['tissue']
+        self.datatype = d['datatype']
+        self.genotype = d['genotype']
+        self.stress = d['stress']
+
+    def SetStress(self, value):
+        self.stress = value.split(',')
 
 
 ##
@@ -132,6 +118,27 @@ class TSData:
                 "Series count: %d\n"+\
                 "Gene count: %d" % (len(self.df_meta.columns), len(self.df.index))
 
+    def getCondition(self, key):
+        if (key not in self.conditions):
+            self.conditions[key] = TSCondition()
+        return self.conditions[key]
+
+    def removeCondition(self, key):
+        if (key in self.conditions):
+            del self.conditions[key]
+
+    # fit condition metadata with df_meta.columns
+    # used when load / save (to keep integrity)
+    def fitCondition(self):
+        cols = list(df_meta.columns)
+        for k in self.conditions:
+            if (k not in cols):
+                print 'remove invalid condition %s' % k
+                del self.conditions[k]
+        for c in cols:
+            if (c not in self.conditions):
+                self.conditions[c] = TSData()
+
 
     # @description load for general TS file
     def load(self, path):
@@ -140,21 +147,11 @@ class TSData:
             if (sectionname == "###TSJsonData"):
                 self.metadata = json.loads(mat_data)
             elif (sectionname == "###TSDataCondition"):
-                datas = {}
-                for l in mat_data.split('\n'):
-                    datas[l[0].lower()] = l[1:]
-                if ('cid' not in datas):
-                    print "###TSDataCondition does not have CID, ignored."
-                else:
-                    for cid in datas['cid']:
-                        tscond = TSCondition
-                        for k in datas:
-                            if (k == 'cid'):
-                                continue
-                            if (len(datas[k]) < idx):
-                                tscond.Set(k, datas[k][idx])
-                        self.conditions[cid] = tscond
-                        idx += 1
+                conds =  json.loads(mat_data)
+                for cid in datas['cond']:
+                    tscond = TSCondition()
+                    tscond.Set(datas['cond'][cid])
+                    self.conditions[cid] = tscond
             elif (sectionname == "###TSDataHeader"):
                 # TODO merge matrix with previous one
                 self.df_meta = pd.read_csv(StringIO(mat_data), sep=self.sep)
@@ -212,9 +209,11 @@ class TSData:
         # sanity check
         if (len(self.df.columns) != len(self.df_meta.columns)):
             raise Exception('DataHeader and DataMatrix column count is different!')
+        self.fitCondition()
 
 
     # load data from CSV file (Header: SampleID, CID, Time)
+    # No condition metadata, in this case.
     def load_csv(self, path):
         self.cur_path = path
         self.sep=','
@@ -223,10 +222,13 @@ class TSData:
             self.df_meta = pd.read_csv(StringIO(unicode(l)), sep=self.sep, index_col=0)
             self.df = pd.read_csv(StringIO(unicode(f.read())), sep=self.sep, index_col=0, header=None)
             self.df.columns = self.df_meta.columns  # fit column for same
+        self.fitCondition()
 
 
     # @description save as TS file format
     def save(self, path=None):
+        self.fitCondition() # condition integrity
+
         if (path == None):
             path = self.cur_path
             if (path == None):
@@ -237,7 +239,8 @@ class TSData:
             f.write('###TSData,0.1\n')
             f.write( json.dumps(self.metadata )+'\n' )
             f.write('###TSDataCondition\n')
-            # TODO write conditions
+            f.write( json.dumps(self.conditions) )
+            f.write('\n')
             f.write('###TSDataHeader\n')
             f.write( self.df_meta.to_csv() )
             if (self.metadata['dfpath'] == None):
