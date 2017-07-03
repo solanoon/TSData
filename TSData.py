@@ -50,6 +50,7 @@ class TSCondition():
         self.tissue = None
         self.datatype = 'CEL'
         self.genotype = 'WT'
+        self.ecotype = None
         self.stress = []        # kind of 'tag'
 
     def __repr__(self):
@@ -59,6 +60,7 @@ class TSCondition():
             'tissue': self.tissue,
             'datatype': self.datatype,
             'genotype': self.genotype,
+            'ecotype': self.ecotype,
             'stress': self.stress,
             }
 
@@ -68,6 +70,7 @@ class TSCondition():
         self.tissue = d['tissue']
         self.datatype = d['datatype']
         self.genotype = d['genotype']
+        self.ecotype = d['ecotype']
         self.stress = d['stress']
 
     def SetStress(self, value):
