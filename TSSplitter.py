@@ -20,6 +20,7 @@ class TSSplitter:
     # csv column:  (optional) Expid, Date, Source ,Type, Desc
     def LoadGroup_csv(self, path):
         csv_df = pd.read_csv(path, index_col=False, header=0)
+        csv_df.fillna('', inplace=True)
         for idx, row in csv_df.iterrows():
             # generate df_meta
             TSDate = None
@@ -30,27 +31,27 @@ class TSSplitter:
             TSExpid = None
             TSGeno = 'WT'
             TSEco = None
-            CID = row['CID'][0]
+            CID = row['CID']
             if ('Date' in row):
-                TSDate = row['Date'][0]
+                TSDate = row['Date']
             if ('Age' in row):
-                TSAge = row['Age'][0]
+                TSAge = row['Age']
             if ('Source' in row):
-                TSSource = row['Source'][0]
+                TSSource = row['Source']
             if ('Type' in row):
-                TSType = row['Type'][0]
+                TSType = row['Type']
             if ('Desc' in row):
-                TSDesc = row['Desc'][0]
+                TSDesc = row['Desc']
             if ('Expid' in row):
-                TSExpid = row['Expid'][0]
+                TSExpid = row['Expid']
             if ('Genotype' in row):
-                TSGeno = row['Genotype'][0]
+                TSGeno = row['Genotype']
             if ('Ecotype' in row):
-                TSEco = row['Ecotype'][0]
+                TSEco = row['Ecotype']
             self.groups[ CID ] = {
-                'Species': row['Species'][0],
-                'Stress': row['Stress'][0],
-                'Tissue': row['Tissue'][0],
+                'Species': row['Species'],
+                'Stress': row['Stress'],
+                'Tissue': row['Tissue'],
                 'Genotype': TSGeno,
                 'Ecotype': TSEco,
                 'Expid': TSExpid,
@@ -80,12 +81,16 @@ class TSSplitter:
             group = self.groups[CID]
             b_CID = csv_df.ix[:,'CID'] == CID
             csv_cond = csv_df[b_CID]
-            genelist = csv_cond.ix[:,'GeneID'].tolist()
+            genelist = csv_cond.ix[:,'SampleID'].tolist()
             #rep = csv_cond.ix[:,5].fillna(0).tolist()   # fill NA for use
             idx = range(len(genelist))  # used for sorting index (for replication-order consistency)
             time = csv_cond.ix[:,'Time'].fillna(0).tolist()
-            title = csv_cond.ix[:,'Time'].fillna('').tolist()
-            detail = csv_cond.ix[:,'Time'].fillna('').tolist()
+            if ('Title' not in csv_cond.columns):
+                csv_cond['Title'] = np.nan
+            if ('Detail' not in csv_cond.columns):
+                csv_cond['Detail'] = np.nan
+            title = csv_cond.ix[:,'Title'].fillna('').tolist()
+            detail = csv_cond.ix[:,'Detail'].fillna('').tolist()
             if ('Valid' in csv_cond.columns):
                 ignore_list = (csv_cond.ix[:,'Valid'].isnull())
             else:
@@ -134,15 +139,15 @@ class TSSplitter:
                         break
                 col_valid_b.append(col_res)
             if (len(col_valid_gn) < len(col_target)):
-                print col_target
-                print 'available', len(col_available)
-                print col_valid_gn
+                print("Not all columns included in matrix file")
                 return False
-                #raise Exception("Not all columns included in matrix file")
             elif (len(col_valid_gn) > len(col_target)):
-                raise Exception("Too many columns selected; maybe invalid filter")
+                print("Too many columns selected; maybe invalid filter")
+                return False
             # extract dataframe
             df_out = self.df.loc[:,col_valid_b]
+        # reset(fit) column name
+        #df_out.columns = tsd.df_meta.columns
 
         # in case of includedf
         if (includedf):
@@ -168,8 +173,8 @@ class TSSplitter:
                 continue
             df_meta = pd.DataFrame(index=['CID','Time','Title','Detail'],columns=genenames)
             df_meta.index.name = 'SampleID'
-            for genename,time,rep,valid,title,detail in group['geneinfo']:
-                df_meta[genename] = [CID, time, title, detail]
+            for sampleid,time,rep,valid,title,detail in group['geneinfo']:
+                df_meta[sampleid] = [CID, time, title, detail]
             # make TSData
             tsdat = TSData.TSData()
             tsdat.df_meta = df_meta
@@ -188,6 +193,7 @@ class TSSplitter:
             cond.genotype = group['Genotype']
             cond.ecotype = group['Ecotype']
             # extract df
+            print 'Extracting %s' % CID
             if (self.Extract(tsdat, True)):
                 print df_meta.columns
                 print tsdat.df.columns

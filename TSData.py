@@ -55,14 +55,14 @@ class TSCondition():
 
     def __repr__(self):
         #return self.__dict__
-        return {
+        return json.dumps({
             'species': self.species,
             'tissue': self.tissue,
             'datatype': self.datatype,
             'genotype': self.genotype,
             'ecotype': self.ecotype,
-            'stress': self.stress,
-            }
+            'stress': str(self.stress),
+            })
 
     # load from json dict array
     def Set(self, d):
@@ -133,14 +133,17 @@ class TSData:
     # fit condition metadata with df_meta.columns
     # used when load / save (to keep integrity)
     def fitCondition(self):
-        cols = list(df_meta.columns)
+        cols = list(set(self.df_meta.ix['CID',:].tolist()))
+        condition_valid = {}
         for k in self.conditions:
-            if (k not in cols):
+            if (k in cols):
+                condition_valid[k] = self.conditions[k]
+            else:
                 print 'remove invalid condition %s' % k
-                del self.conditions[k]
+        self.conditions = condition_valid
         for c in cols:
             if (c not in self.conditions):
-                self.conditions[c] = TSData()
+                self.conditions[c] = TSCondition()
 
 
     # @description load for general TS file
@@ -242,7 +245,10 @@ class TSData:
             f.write('###TSData,0.1\n')
             f.write( json.dumps(self.metadata )+'\n' )
             f.write('###TSDataCondition\n')
-            f.write( json.dumps(self.conditions) )
+            d_cond = {}
+            for k in self.conditions:
+                d_cond[k] = str(self.conditions[k])
+            f.write( json.dumps(d_cond) )
             f.write('\n')
             f.write('###TSDataHeader\n')
             f.write( self.df_meta.to_csv() )
