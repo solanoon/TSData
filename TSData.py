@@ -51,6 +51,7 @@ class TSCondition():
         self.datatype = 'CEL'
         self.genotype = 'WT'
         self.ecotype = None
+        self.age = None
         self.stress = []        # kind of 'tag'
 
     def __repr__(self):
@@ -60,6 +61,7 @@ class TSCondition():
     # get dict array
     def Get(self):
         return {
+            'age': self.age,
             'species': self.species,
             'tissue': self.tissue,
             'datatype': self.datatype,
@@ -70,6 +72,7 @@ class TSCondition():
 
     # load from json dict array
     def Set(self, d):
+        self.age = d['age']
         self.species = d['species']
         self.tissue = d['tissue']
         self.datatype = d['datatype']
@@ -122,7 +125,7 @@ class TSData:
         # tell how many samples / conditions are existing
         return ("Metadata Info:\n"+\
                 str(self.metadata)+"\n"+\
-                "Series count: %d\n"+\
+                "Series(Condition) count: %d\n"+\
                 "Gene count: %d") % (len(self.df_meta.columns), len(self.df.index))
 
     def getCondition(self, key):

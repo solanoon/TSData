@@ -180,13 +180,13 @@ class TSSplitter:
             tsdat.df_meta = df_meta
             tsdat.metadata['name'] = CID
             tsdat.metadata['date'] = group['Date']
-            tsdat.metadata['age'] = group['Age']
             tsdat.metadata['source'] = group['Source']
             tsdat.metadata['type'] = group['Type']
             tsdat.metadata['desc'] = group['Desc']
             # make TSCondition
             cond = tsdat.getCondition(CID)
             cond.SetStress(group['Stress'])
+            cond.age = group['Age']
             cond.species = group['Species']
             cond.tissue = group['Tissue']
             cond.datatype = group['Type']
