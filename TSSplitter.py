@@ -195,8 +195,7 @@ class TSSplitter:
             # extract df
             print 'Extracting %s' % CID
             if (self.Extract(tsdat, True)):
-                print df_meta.columns
-                print tsdat.df.columns
+                print(str(tsdat))
                 tsdat.save(os.path.join(outdir,"%s.tsd"%CID))
 
 

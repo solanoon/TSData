@@ -120,10 +120,10 @@ class TSData:
 
     def __str__(self):
         # tell how many samples / conditions are existing
-        return "Metadata Info:\n"+\
+        return ("Metadata Info:\n"+\
                 str(self.metadata)+"\n"+\
                 "Series count: %d\n"+\
-                "Gene count: %d" % (len(self.df_meta.columns), len(self.df.index))
+                "Gene count: %d") % (len(self.df_meta.columns), len(self.df.index))
 
     def getCondition(self, key):
         if (key not in self.conditions):
@@ -290,6 +290,8 @@ class TSData:
     # @description get SampleIDs
     def GetSampleIDs(self):
         return list(self.df_meta.index)
+    def GetGeneCount(self):
+        return len(self.df.index)
 
     # -------------------------
     # modifiers
