@@ -55,14 +55,18 @@ class TSCondition():
 
     def __repr__(self):
         #return self.__dict__
-        return json.dumps({
+        return json.dumps(Get(self))
+
+    # get dict array
+    def Get(self):
+        return {
             'species': self.species,
             'tissue': self.tissue,
             'datatype': self.datatype,
             'genotype': self.genotype,
             'ecotype': self.ecotype,
             'stress': str(self.stress),
-            })
+            }
 
     # load from json dict array
     def Set(self, d):
@@ -247,7 +251,7 @@ class TSData:
             f.write('###TSDataCondition\n')
             d_cond = {}
             for k in self.conditions:
-                d_cond[k] = str(self.conditions[k])
+                d_cond[k] = self.conditions[k].Get()
             f.write( json.dumps(d_cond) )
             f.write('\n')
             f.write('###TSDataHeader\n')
