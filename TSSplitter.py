@@ -147,7 +147,8 @@ class TSSplitter:
             # extract dataframe
             df_out = self.df.loc[:,col_valid_b]
         # reset(fit) column name
-        #df_out.columns = tsd.df_meta.columns
+        tsd.df.index.name = 'Genename'
+        tsd.df.columns = tsd.df_meta.columns
 
         # in case of includedf
         if (includedf):

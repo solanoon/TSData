@@ -67,7 +67,7 @@ class TSCondition():
             'datatype': self.datatype,
             'genotype': self.genotype,
             'ecotype': self.ecotype,
-            'stress': str(self.stress),
+            'stress': self.stress,
             }
 
     # load from json dict array
@@ -161,26 +161,26 @@ class TSData:
             if (sectionname == "###TSJsonData"):
                 self.metadata = json.loads(mat_data)
             elif (sectionname == "###TSDataCondition"):
-                conds =  json.loads(mat_data)
-                for cid in datas['cond']:
+                conds = json.loads(mat_data)
+                for cid,dat in conds.items():
                     tscond = TSCondition()
-                    tscond.Set(datas['cond'][cid])
+                    tscond.Set(dat)
                     self.conditions[cid] = tscond
             elif (sectionname == "###TSDataHeader"):
                 # TODO merge matrix with previous one
-                self.df_meta = pd.read_csv(StringIO(mat_data), sep=self.sep)
+                self.df_meta = pd.read_csv(StringIO(unicode(mat_data)), sep=self.sep, index_col=0)
             elif (sectionname == "###TSDataMatrix"):
                 # TODO merge matrix with previous one
-                self.df = pd.read_csv(StringIO(mat_data), sep=self.sep)
+                self.df = pd.read_csv(StringIO(unicode(mat_data)), sep=self.sep, index_col=0)
             elif (sectionname == "###TSDataEvent"):
                 print("###TSDataEvent section is not currently supported, sorry.")
 
 
         self.cur_path = path
-        if (self.cur_path[-4:] == '.csv'):
-            self.sep = ','
-        else:
+        if (self.cur_path[-4:] == '.txt'):
             self.sep = '\t'
+        else:
+            self.sep = ','
         with open(path, "r") as f:
             l = f.readline()
             # check signature
@@ -193,7 +193,8 @@ class TSData:
             # read all section to end of the file
             cmd = "###TSJsonData"
             mat_data = ""
-            for l in f.readline():
+            for l in f.readlines():
+                l = l.strip()
                 if (l[:9] == "###TSData"):
                     if (mat_data == ""):
                         print "Section %s is empty, ignored." % cmd
@@ -203,12 +204,13 @@ class TSData:
                         cmd = l
                         mat_data = ""
                 else:
-                    mat_data += l
+                    mat_data += l + '\n'
             # if previous section remains, then save.
             if (mat_data != ""):
                 save_section(cmd, mat_data)
             # fin
             f.close()
+
 
         # if dfpath exists, then load it.
         if (self.metadata['dfpath'] is not None):
@@ -283,11 +285,8 @@ class TSData:
         self.__init__()
 
     # @description metadata related (TODO)
-    def setName(self, name):
-        self.name = name
-    def setType(self, type):
-        self.type = type
-
+    def SetName(self, name):
+        self.metadata['name'] = name
     # @description get CIDs
     def GetCIDs(self):
         return list(set(self.df_meta.loc['CID']))
@@ -547,27 +546,28 @@ class TSExp:
 #
 
 # @description Merge TS objects and creates new one
-def merge(self, arr_ts):
+def merge(arr_ts):
     if (len(arr_ts) == 0):
         raise Exception("merging TS is zero; give valid TS set.")
 
     ts_r = TSData()
 
     # check validation
-    raise Exception('not implemented')
-
-    # make empty set
-    pass
+    arr_idx = None
+    for ts in arr_ts:
+        if arr_idx is None:
+            arr_idx = list(ts.df.index)
+        else:
+            if (arr_idx != list(ts.df.index)):
+                raise Exception('Cannot merge series, as Genename index is different.')
 
     # sum'em all
     for ts in arr_ts:
-        ts_r.conditions += ts.conditions
-
-    # raise error if row index(genename) set is different
-    if (self.df.index != ts.df.index):
-        raise Exception("row index(genename) set is different")
-    self.df[ts.df.columns] = ts.df
-    self.df_meta[ts.df.columns] = ts.df_meta
+        ts_r.conditions.update(ts.conditions)
+    arr_df = map(lambda x: x.df, arr_ts)
+    arr_df_meta = map(lambda x: x.df_meta, arr_ts)
+    ts_r.df = pd.concat(arr_df, axis=1)
+    ts_r.df_meta = pd.concat(arr_df_meta, axis=1)
 
     return ts_r
 
