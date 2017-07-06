@@ -126,7 +126,8 @@ class TSData:
         return ("Metadata Info:\n"+\
                 str(self.metadata)+"\n"+\
                 "Series(Condition) count: %d\n"+\
-                "Gene count: %d") % (len(self.df_meta.columns), len(self.df.index))
+                "Sample count: %d\n"+\
+                "Gene count: %d") % (self.GetConditionCount(), len(self.df_meta.columns), len(self.df.index))
 
     def getCondition(self, key):
         if (key not in self.conditions):
@@ -295,18 +296,12 @@ class TSData:
         return list(self.df_meta.index)
     def GetGeneCount(self):
         return len(self.df.index)
+    def GetConditionCount(self):
+        return len(self.conditions)
 
     # -------------------------
     # modifiers
     # -------------------------
-
-    # @description Merge other TS object into current one.
-    def merge(self, ts):
-        # raise error if row index(genename) set is different
-        if (self.df.index != ts.df.index):
-            raise Exception("row index(genename) set is different")
-        self.df[ts.df.columns] = ts.df
-        self.df_meta[ts.df.columns] = ts.df_meta
 
     # @description flatten replicated TS column into single one
     # (in case of replication is unsupported, ex: wigwams)
@@ -544,3 +539,35 @@ class TSExp:
 
     def GetLog(self):
         return ""
+
+
+
+#
+# ------ General Functions ------
+#
+
+# @description Merge TS objects and creates new one
+def merge(self, arr_ts):
+    if (len(arr_ts) == 0):
+        raise Exception("merging TS is zero; give valid TS set.")
+
+    ts_r = TSData()
+
+    # check validation
+    raise Exception('not implemented')
+
+    # make empty set
+    pass
+
+    # sum'em all
+    for ts in arr_ts:
+        ts_r.conditions += ts.conditions
+
+    # raise error if row index(genename) set is different
+    if (self.df.index != ts.df.index):
+        raise Exception("row index(genename) set is different")
+    self.df[ts.df.columns] = ts.df
+    self.df_meta[ts.df.columns] = ts.df_meta
+
+    return ts_r
+
