@@ -315,7 +315,8 @@ class TSData:
         df = self.df
         dfh = self.df_meta
         # newly generating data
-        n_dfh = pd.DataFrame(index=dfh.index)
+        n_dfh = pd.DataFrame(index=['CID','Time'])
+        n_dfh.index.name = 'SampleID'
         n_df = pd.DataFrame(index=df.index)
         # filter from CID and Time
         CID_set = removeduplicated(dfh.loc['CID'])  # to be in order
@@ -323,13 +324,13 @@ class TSData:
         n_df_cols = []
         for CID in list(CID_set):
             arr_bool = dfh.loc['CID'] == CID
-            dfh_cond = dfh.loc[:, arr_bool]
-            df_cond = df.loc[:, arr_bool]
+            dfh_cond = dfh.loc[:, list(arr_bool)]
+            df_cond = df.loc[:, list(arr_bool)]
             time_set = removeduplicated(dfh_cond.loc['Time'])
             for t in list(time_set):
                 # set data column name automatically, using time & CID
                 col_name = '%s_%s' % (CID, t)
-                df_cond_time = df_cond.loc[:,dfh_cond.loc['Time']==t]
+                df_cond_time = df_cond.loc[:,list(dfh_cond.loc['Time']==t)]
                 if (func == 'avg'):
                     n_df[col_name] = df_cond_time.mean(axis=1)
                 elif (func == 'first'):
@@ -345,6 +346,7 @@ class TSData:
         # use result
         self.df = n_df
         self.df_meta = n_dfh
+        print self.df_meta
 
     def rescale_replication(self):
         raise Exception("replication rescaling is not supported now!")
