@@ -514,14 +514,18 @@ class TSExp:
         self.expname = "TSExp_base"
         self.workdir = ""
         self.params = {}
-        self.values = []
-        self.clusters = []
-        self.graphs = []
+        self.values = []    # (value: string, desc: string) single value
+        self.clusters = []  # (cluster: [string], desc: string) clusters
+        self.graphs = []    # (path: string, desc) cytoscape.js ?
+        self.images = []    # (path: string, desc) only png, jpg, ...
+        self.files = []     # (path: string, desc) other types
+
         # 0: finished
         # 1: pending
         # 2: processing
         # 3: (error or something else)
         self.status = 0
+        self.stat_msg = ""
         self.progress = 0
         self.desc = ""
 
@@ -535,19 +539,81 @@ class TSExp:
 
     # @description
     # load TSExp result from path
-    def LoadExp(self, path):
-        raise Exception("NotImplemented")
+    def load(self, path):
+        d = json.load(path)
+        self.values = d['values']
+        self.clusters = d['clusters']
+        self.graphs = d['graphs']
+        self.images = d['images']
+        self.files = d['files']
+
+        status = d['status']
+        self.expname = status['expname']
+        self.status = status['status']
+        self.stat_msg = status['stat_msg']
+        self.progress = status['progress']
+        self.desc = status['desc']
+    def save(self, path=None):
+        if (path is None):
+            path = os.path.join(self.workdir, self.expname+'.json')
+        json.dump({
+            'status': {
+                'expname': self.expname,
+                'status': self.status,
+                'stat_msg': self.stat_msg,
+                'progress': self.progress,
+                'desc': self.desc
+            },
+            'values': self.values,
+            'clusters': self.clusters,
+            'graphs': self.graphs,
+            'images': self.images,
+            'files': self.files
+        }, path)
+
+    # @description
+    # Get as formatted one (this can be customized ...)
+    def format(self):
+        r = []
+        for v in self.values:
+            d = dict(v)
+            d['type'] = 'value'
+            r.append(d)
+        for v in self.clusters:
+            d = dict(v)
+            d['type'] = 'clusters'
+            r.append(d)
+        for v in self.graphs:
+            d = dict(v)
+            d['type'] = 'graphs'
+            r.append(d)
+        for v in self.images:
+            d = dict(v)
+            d['type'] = 'images'
+            r.append(d)
+        for v in self.files:
+            d = dict(v)
+            d['type'] = 'files'
+            r.append(d)
+        return r
 
     def GetStatus(self):
         return self.status
-    def SetError(self, code=3):
+    def SetError(self, stat_msg='', code=3):
         self.status = code
+        self.stat_msg = stat_msg
     def SetFinish(self):
         self.status = 0
     def SetPending(self):
         self.status = 1
     def SetProcessing(self):
         self.status = 2
+    def IsFinish(self):
+        return self.status == 0
+    def IsProcessing(self):
+        return self.status == 2
+    def IsError(self):
+        return self.status >= 3
 
     def GetProgress(self):
         return self.progress
@@ -556,9 +622,8 @@ class TSExp:
 
     def GetDesc(self):
         return self.desc
-
-    def GetLog(self):
-        return ""
+    def GetMessage(self):
+        return self.stat_msg
 
 
 
