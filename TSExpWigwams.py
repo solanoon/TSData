@@ -33,7 +33,9 @@ class TSExpWigwams(TSData.TSExp):
         elif (self.replication == "none"):
             pass
         else:
-            raise Exception("Unknown replication process command: %s" % self.replication) 
+            raise Exception("Unknown replication process command: %s" % self.replication)
+        # must convert timedata into float format
+        self.tsd.convert_timedata_float()
         with open(wigwams_input_path, 'w') as f:
             # drop a row - SampleID (header)
             df_meta_2 = self.tsd.df_meta

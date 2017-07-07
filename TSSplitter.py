@@ -92,12 +92,12 @@ class TSSplitter:
             title = csv_cond.ix[:,'Title'].fillna('').tolist()
             detail = csv_cond.ix[:,'Detail'].fillna('').tolist()
             if ('Valid' in csv_cond.columns):
-                ignore_list = (csv_cond.ix[:,'Valid'].isnull())
+                valid_list = list(csv_cond.ix[:,'Valid'].fillna(0) != 0)
             else:
-                ignore_list = [False] * len(genelist)
+                valid_list = [True] * len(genelist)
             # sort with rep/time
-            geneinfo = zip(genelist, time, idx, ignore_list, title, detail)
-            geneinfo = filter(lambda x: not x[2], geneinfo) # filter invalid genes
+            geneinfo = zip(genelist, time, idx, valid_list, title, detail)
+            geneinfo = filter(lambda x: x[3], geneinfo) # filter invalid genes
             geneinfo.sort(key=gene_sorter)
             group['geneinfo'] = geneinfo
 
@@ -144,11 +144,12 @@ class TSSplitter:
             elif (len(col_valid_gn) > len(col_target)):
                 print("Too many columns selected; maybe invalid filter")
                 return False
+            print col_valid_gn
             # extract dataframe
             df_out = self.df.loc[:,col_valid_b]
         # reset(fit) column name
         tsd.df.index.name = 'Genename'
-        tsd.df.columns = tsd.df_meta.columns
+        df_out.columns = tsd.df_meta.columns
 
         # in case of includedf
         if (includedf):

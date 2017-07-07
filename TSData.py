@@ -26,16 +26,18 @@ from io import StringIO
 
 # @description: Get time data in hours
 def GetTSFromString(s):
+    s = s.strip()
     if (s[-1] == 'm'):
-        return float(s[:-1])
+        return float(s[:-1]) / 60.0
     elif (s[-1] == 'h'):
-        return float(s[:-1]) * 60
+        return float(s[:-1])
     elif (s[-1] == 'D'):
-        return float(s[:-1]) * 3600
+        return float(s[:-1]) * 60
     elif (s[-1] == 'M'):
-        return float(s[:-1]) * 3600 * 30
+        return float(s[:-1]) * 60 * 30
     else:
-        raise Exception("Cannot extract time info from string: %s" % s)
+        return float(s)
+        #raise Exception("Cannot extract time info from string: %s" % s)
 
 def GetRepFromString(s):
     raise Exception("Cannot extract replication from string: %s" % s)
@@ -351,6 +353,16 @@ class TSData:
     def rescale_replication(self):
         raise Exception("replication rescaling is not supported now!")
 
+    #
+    # @description
+    # converts timedata into float(hour) format
+    # raise Exception if inavailable format.
+    #
+    def convert_timedata_float(self):
+        arr_t = self.df_meta.loc['Time'].tolist()
+        arr_t = map(lambda x: GetTSFromString(x), arr_t)
+        self.df_meta.loc['Time'] = arr_t
+
     # @description split this timeseries from CID
     # in case of program requires each condition as separated file (ex: EDISA)
     def SplitByCID(self):
@@ -402,6 +414,13 @@ class TSData:
 
     def RemoveBySampleID(self, sid_group):
         raise Exception('not supported yet')
+
+
+
+
+
+
+
 
     #
     # depreciated
