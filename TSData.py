@@ -45,7 +45,7 @@ def GetRepFromString(s):
 
 # Condition desc (kind of metadata, not must required)
 # used in: TSData.conditions
-class TSCondition():
+class TSCondition(object):
     def __init__(self):
         # string desc (Should be filled)
         self.species = None     # Arabidopsis, Oryza sativa, ...
@@ -90,7 +90,7 @@ class TSCondition():
 # TSData
 # @description: main class that loads / saves / calculates Timeseries differential
 #
-class TSData:
+class TSData(object):
     def metadata_init(self):
         # metadata
         self.metadata = {
@@ -509,7 +509,7 @@ class TSData:
 
 
 # implementations for extensions with TSData
-class TSExp:
+class TSExp(object):
     def __init__(self):
         self.expname = "TSExp_base"
         self.workdir = ""

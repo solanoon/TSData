@@ -14,9 +14,9 @@ class TSExpWigwams(TSData.TSExp):
     def __init__(self, tsd, workdir):
         self.tsd = tsd  # TODO: copy
         self.replication = "flatten"
-        TSData.TSExp.expname = "wigwams"
-        TSData.TSExp.desc = "All time replication are averaged as wigwams doesn't supports replication."
-        TSData.TSExp.workdir = workdir
+        self.expname = "wigwams"
+        self.desc = "All time replication are averaged as wigwams doesn't supports replication."
+        self.workdir = workdir
 
     # "flatten", "rescale", "none"
     def SetReplicationProcess(self, replication):
@@ -24,7 +24,7 @@ class TSExpWigwams(TSData.TSExp):
 
     # summarize result and save
     def Summarize(self):
-        wigwams_out = os.path.join(TSData.TSExp.workdir, 'exported_modules.tsv')
+        wigwams_out = os.path.join(self.workdir, 'exported_modules.tsv')
         # load cluster info
         try:
             with open(wigwams_out,'r') as f:
@@ -40,19 +40,21 @@ class TSExpWigwams(TSData.TSExp):
                     cluster[cluster_idx]['cluster'].append(cluster_gn)
         except Exception as e:
             error_msg = str(e)
-            TSData.TSExp.SetError(error_msg)
+            super(TSExpWigwams, self).SetError(error_msg)
+            clusters = []
+            raise e
         # store cluster info
-        TSData.TSExp.clusters = clusters
-        TSData.TSExp.graphs = []
+        self.clusters = clusters
+        self.graphs = []
         for i in range(len(cluster)):
-            TSData.TSExp.graphs.append({
+            self.graphs.append({
                 'path': 'plots/Module%d.eps' % (i+1),
                 'desc': 'eps plot file'
             })
 
     def run(self):
         # tidy tsd data into wigwams input format
-        wigwams_input_path = os.path.join(TSData.TSExp.workdir, 'wigwams_input.csv')
+        wigwams_input_path = os.path.join(self.workdir, 'wigwams_input.csv')
         # must process replication
         if (self.replication == "flatten"):
             self.tsd.flatten_replication()
@@ -62,7 +64,7 @@ class TSExpWigwams(TSData.TSExp):
             pass
         else:
             errormsg = "Unknown replication process command: %s" % self.replication
-            TSData.TSExp.SetError(errormsg)
+            super(TSExpWigwams, self).SetError(errormsg)
         # must convert timedata into float format & save
         self.tsd.convert_timedata_float()
         with open(wigwams_input_path, 'w') as f:
@@ -76,10 +78,11 @@ class TSExpWigwams(TSData.TSExp):
         #with patch('sys.argv', [
         #    '--Expression', wigwams_input_path]):
         old_sys_argv = sys.argv
-        sys.argv = [sys.argv[0]] + ('--Expression %s' % wigwams_input_path).split()
+        wigwams_workdir = os.path.join( os.getcwd(), self.workdir )
+        sys.argv = [wigwams_workdir] + ('--Expression %s' % wigwams_input_path).split()
         wigwams_wrapper.main()
         sys.argv = old_sys_argv
 
         # summarize output data and finish
         self.Summarize()
-        TSData.TSExp.SetFinish()
+        super(TSExpWigwams, self).SetFinish()
