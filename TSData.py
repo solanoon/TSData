@@ -546,6 +546,7 @@ class TSExp(object):
         self.graphs = d['graphs']
         self.images = d['images']
         self.files = d['files']
+        self.params = {}
 
         status = d['status']
         self.expname = status['expname']
@@ -556,20 +557,21 @@ class TSExp(object):
     def save(self, path=None):
         if (path is None):
             path = os.path.join(self.workdir, self.expname+'.json')
-        json.dump({
-            'status': {
-                'expname': self.expname,
-                'status': self.status,
-                'stat_msg': self.stat_msg,
-                'progress': self.progress,
-                'desc': self.desc
-            },
-            'values': self.values,
-            'clusters': self.clusters,
-            'graphs': self.graphs,
-            'images': self.images,
-            'files': self.files
-        }, path)
+        with open(path,'w') as f:
+            json.dump({
+                'status': {
+                    'expname': self.expname,
+                    'status': self.status,
+                    'stat_msg': self.stat_msg,
+                    'progress': self.progress,
+                    'desc': self.desc
+                },
+                'values': self.values,
+                'clusters': self.clusters,
+                'graphs': self.graphs,
+                'images': self.images,
+                'files': self.files
+            }, f)
 
     # @description
     # Get as formatted one (this can be customized ...)
