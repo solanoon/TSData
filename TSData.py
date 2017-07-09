@@ -540,7 +540,8 @@ class TSExp(object):
     # @description
     # load TSExp result from path
     def load(self, path):
-        d = json.load(path)
+        with open(path,'r') as f:
+            d = json.load(f)
         self.values = d['values']
         self.clusters = d['clusters']
         self.graphs = d['graphs']

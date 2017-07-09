@@ -1,4 +1,4 @@
-import TSData
+#import TSData
 import os
 from wigwams.scripts import wigwams_wrapper
 #import unittest.mock
@@ -10,18 +10,18 @@ import sys
 # save & process TSData file for wigwams processable format
 #
 
-class TSExpWigwams(TSData.TSExp):
-    def __init__(self, tsd, workdir):
-        super(TSExpWigwams, self).__init__()
+class TSExpWigwams(object):
+    def __init__(self, tsexp, tsd, workdir):
+        self.exp = tsexp
         self.tsd = tsd  # TODO: copy
-        self.replication = "flatten"
-        self.expname = "wigwams"
-        self.desc = "All time replication are averaged as wigwams doesn't supports replication."
+        self.exp.params['replication'] = "flatten"
+        self.exp.expname = "wigwams"
+        self.exp.desc = "All time replication are averaged as wigwams doesn't supports replication."
         self.workdir = workdir
 
     # "flatten", "rescale", "none"
     def SetReplicationProcess(self, replication):
-        self.replication = replication
+        self.exp.params['replication'] = replication
 
     # summarize result and save
     def Summarize(self):
@@ -41,32 +41,39 @@ class TSExpWigwams(TSData.TSExp):
                     clusters[cluster_idx-1]['cluster'].append(cluster_gn)
         except Exception as e:
             error_msg = str(e)
-            super(TSExpWigwams, self).SetError(error_msg)
+            self.exp.SetError(error_msg)
             clusters = []
             raise e
         # store cluster info
-        self.clusters = clusters
-        self.graphs = []
+        self.exp.clusters = clusters
+        self.exp.graphs = []
         for i in range(len(clusters)):
-            self.graphs.append({
+            self.exp.graphs.append({
                 'path': 'plots/Module%d.eps' % (i+1),
                 'desc': 'eps plot file'
             })
 
     def run(self):
+        if (self.tsd == None):
+            raise Exception('No TSData to experiment')
+        if (self.workdir == None):
+            raise Exception('No workdir specified to process')
+        if (self.exp == None):
+            raise Exception('No TSExp to experiment')
         # TODO: use params
         # tidy tsd data into wigwams input format (workdir changed)
         wigwams_input_path = 'wigwams_input.csv'
         # must process replication
-        if (self.replication == "flatten"):
+        rep_type = self.exp.params['replication']
+        if (rep_type == "flatten"):
             self.tsd.flatten_replication()
-        elif (self.replication == "rescale"):
+        elif (rep_type == "rescale"):
             self.tsd.rescale_replication()
-        elif (self.replication == "none"):
+        elif (rep_type == "none"):
             pass
         else:
-            errormsg = "Unknown replication process command: %s" % self.replication
-            super(TSExpWigwams, self).SetError(errormsg)
+            errormsg = "Unknown replication process command: %s" % rep_type
+            self.exp.SetError(errormsg)
         # must convert timedata into float format & save
         self.tsd.convert_timedata_float()
         with open(wigwams_input_path, 'w') as f:
@@ -90,4 +97,4 @@ class TSExpWigwams(TSData.TSExp):
 
         # summarize output data and finish
         self.Summarize()
-        super(TSExpWigwams, self).SetFinish()
+        self.exp.SetFinish()
