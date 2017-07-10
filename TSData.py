@@ -511,14 +511,15 @@ class TSData(object):
 # implementations for extensions with TSData
 class TSExp(object):
     def __init__(self):
-        self.expname = "TSExp_base"
+        self.name = "TSExp_base"
         self.workdir = ""
         self.params = {}
-        self.values = []    # (value: string, desc: string) single value
-        self.clusters = []  # (cluster: [string], desc: string) clusters
-        self.graphs = []    # (path: string, desc) cytoscape.js ?
-        self.images = []    # (path: string, desc) only png, jpg, ...
-        self.files = []     # (path: string, desc) other types
+        self.values = []    # (value: string, name, desc: string) single value
+        self.clusters = []  # (cluster: [string], name, desc: string) clusters
+        self.graphs = []    # (path: string, name, desc) cytoscape.js ?
+        self.images = []    # (path: string, name, desc) only png, jpg, ...
+        self.files = []     # (path: string, name, desc) other types
+        self.tables = []    # (path: string, name, desc) mostly csv-formatted data
 
         # 0: finished
         # 1: pending
@@ -534,7 +535,7 @@ class TSExp(object):
                 "WorkDir: %s\n"\
                 "ExpParam: %s\n"\
                 "Exp Result: Value %d, Clusters %d, Graphs %d"\
-                % (self.expname, self.workdir, json.dumps(self.params),
+                % (self.name, self.workdir, json.dumps(self.params),
                         len(self.values), len(self.clusters), len(self.graphs))
 
     # @description
@@ -547,21 +548,22 @@ class TSExp(object):
         self.graphs = d['graphs']
         self.images = d['images']
         self.files = d['files']
+        self.tables = d['tables']
         self.params = {}
 
         status = d['status']
-        self.expname = status['expname']
+        self.name = status['name']
         self.status = status['status']
         self.stat_msg = status['stat_msg']
         self.progress = status['progress']
         self.desc = status['desc']
     def save(self, path=None):
         if (path is None):
-            path = os.path.join(self.workdir, self.expname+'.json')
+            path = os.path.join(self.workdir, self.name+'.json')
         with open(path,'w') as f:
             json.dump({
                 'status': {
-                    'expname': self.expname,
+                    'name': self.name,
                     'status': self.status,
                     'stat_msg': self.stat_msg,
                     'progress': self.progress,
@@ -571,7 +573,8 @@ class TSExp(object):
                 'clusters': self.clusters,
                 'graphs': self.graphs,
                 'images': self.images,
-                'files': self.files
+                'files': self.files,
+                'tables': self.tables
             }, f)
 
     # @description
@@ -598,6 +601,10 @@ class TSExp(object):
             d = dict(v)
             d['type'] = 'files'
             r.append(d)
+        for v in self.tables:
+            d = dict(v)
+            d['type'] = 'tables'
+            r.append(d)
         return r
 
     def GetStatus(self):
@@ -622,6 +629,9 @@ class TSExp(object):
         return self.progress
     def SetProgress(self, v):
         self.progress = v
+
+    def SetParam(self, k, v):
+        self.params[k] = v
 
     def GetDesc(self):
         return self.desc

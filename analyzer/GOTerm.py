@@ -1,9 +1,12 @@
 import scipy.stats as stats
+import pandas as pd
 
 # default file lists to load
 list_t2g_alias = {
     "rice": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.rice.txt",
-    "arabidopsis": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.arabidopsis.txt"
+    "arabidopsis": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.arabidopsis.txt",
+    "human": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.human.txt",
+    "mouse": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.rice.txt"
 }
 
 # trait to genes file list
@@ -41,6 +44,13 @@ class GOTerm(object):
 
     # trait, pvalue, (fisher 4 elements)
     def GOanalysis(self, lst_gene):
+        return pd.DataFrame(
+            self.GOanalysis_list(lst_gene),
+            columns=('GOTerm', 'pvalue', 'occured_in_tested', 'total_tested', 'occured_in_background', 'total_background')
+            )
+
+    # trait, pvalue, (fisher 4 elements)
+    def GOanalysis_list(self, lst_gene):
         dic_trait2count = {}
         set_tested_gene = set()
         for gid in lst_gene:
@@ -66,5 +76,4 @@ class GOTerm(object):
                 lst_out.append([trait, pval, occured_in_tested, total_tested, occured_in_background, total_background])
         # sort with pvalue
         return sorted(lst_out, key=lambda x: x[1])
-
 

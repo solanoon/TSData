@@ -15,7 +15,7 @@ class TSExpWigwams(object):
         self.exp = tsexp
         self.tsd = tsd  # TODO: copy
         self.exp.params['replication'] = "flatten"
-        self.exp.expname = "wigwams"
+        self.exp.name = "wigwams"
         self.exp.desc = "All time replication are averaged as wigwams doesn't supports replication."
         self.workdir = workdir
 
@@ -36,6 +36,7 @@ class TSExpWigwams(object):
                     while (len(clusters) < cluster_idx):
                         clusters.append({
                             'cluster': [],
+                            'name': '%d cluster' % (cluster_idx+1),
                             'desc': cluster_groups,
                         })
                     clusters[cluster_idx-1]['cluster'].append(cluster_gn)
