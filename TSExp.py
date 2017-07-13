@@ -147,32 +147,38 @@ class TSExp(object):
 class TSExpGroup(object):
     def __init__(self):
         self.list_exp = []  # listed exp for visualizing
-        self.total_exp = {} # (key: expname) total experiments, just read from path...
+        self.dict_exp = {} # (key: expname) total experiments, just read from path...
         self.path = None
 
     def __repr__(self):
-        return 'path: %s\nexp count: %d' % (self.path, len(self.list_exp))
+        return 'path: %s\nexp total count:%d\nexp list count: %d' % (self.path, len(self.dict_exp), len(self.list_exp))
 
     # @description
     # read experiments from path directory
     # and tidy them...
     def read(self, path):
         fp_list = []
+        for fp in os.listdir(path):
+            fp_rel = os.path.join(path, fp)
+            if (os.path.isfile(fp_rel) and fp.endswith(".json")):
+                fp_list.append(fp_rel)
         for fp in fp_list:
             exp = TSExp()
             exp.load(fp)
-            if (exp.name in self.total_exp):
+            if (exp.name in self.dict_exp):
                 print 'WARNING: expname %s(%s) is already exists' % (exp.name, fp)
-            self.total_exp[exp.name] = exp
+            self.dict_exp[exp.name] = exp
 
         # make hierarcical list from loaded experiment
-        for _, exp in self.total_exp.items():
+        for _, exp in self.dict_exp.items():
             if (exp.parent is None):
                 self.list_exp.append(exp)
             else:
-                parent_name = self.parent
-                if (parent_name not in self.total_exp):
+                parent_name = exp.parent
+                if (parent_name not in self.dict_exp):
                     print 'WARNING: expname %s has parent %s, but parent not exists.'\
                         % (exp.name, parent_name)
                     continue
-                self.total_exp[parent_name].children.append(exp)
+                self.dict_exp[parent_name].children.append(exp)
+
+        self.path = path
