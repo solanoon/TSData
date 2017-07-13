@@ -34,9 +34,10 @@ class TSExp(object):
         return "Expname: %s\n"\
                 "WorkDir: %s\n"\
                 "ExpParam: %s\n"\
-                "Exp Result: Value %d, Clusters %d, Graphs %d"\
+                "Exp Result: Value %d, Clusters %d, Graphs %d, Images %d, Files %d, Tables %d"\
                 % (self.name, self.workdir, json.dumps(self.params),
-                        len(self.values), len(self.clusters), len(self.graphs))
+                        len(self.values), len(self.clusters), len(self.graphs),
+                        len(self.images), len(self.files), len(self.tables))
 
     # @description
     # load TSExp result from path
