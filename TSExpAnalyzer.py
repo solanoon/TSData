@@ -39,13 +39,15 @@ class TSExpGOTerm(object):
             name = cluster['name']
             genelist = cluster['cluster']
             result_table = go.GOanalysis(genelist)
-            fn = os.path.join( self.exp.workdir, '%s.csv' % name )
-            result_table.to_csv(fn, index=False)
-            result_table_exp.append({
-                'name': 'GOTerm of cluster %s' % name, 
-                'desc': '',
-                'path':fn
-            })
+            if (not result_table.empty):
+                fn = os.path.join( self.exp.workdir, '%s.csv' % name )
+                result_table.to_csv(fn, index=False)
+                desc = str(result_table['GOTerm'].iloc[0])
+                result_table_exp.append({
+                    'name': 'GOTerm of cluster %s' % name, 
+                    'desc': desc,
+                    'path': fn
+                })
         # append result table into TSExp ...
         self.exp.tables = result_table_exp
 

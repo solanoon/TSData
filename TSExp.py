@@ -171,15 +171,24 @@ class TSExpGroup(object):
             self.dict_exp[exp.name] = exp
 
         # make hierarcical list from loaded experiment
+        # (ex)
+        # parent
+        # - child
+        # - child
+        # parent
+        # ...
         for _, exp in self.dict_exp.items():
-            if (exp.parent is None):
-                self.list_exp.append(exp)
-            else:
+            if (exp.parent is not None):
                 parent_name = exp.parent
                 if (parent_name not in self.dict_exp):
                     print 'WARNING: expname %s has parent %s, but parent not exists.'\
                         % (exp.name, parent_name)
                     continue
                 self.dict_exp[parent_name].children.append(exp)
+        for _, exp in self.dict_exp.items():
+            if (exp.parent is None):
+                self.list_exp.append(exp)
+                for child in exp.children:
+                    self.list_exp.append(child)
 
         self.path = path
