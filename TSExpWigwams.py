@@ -52,6 +52,7 @@ class TSExpWigwams(object):
             self.exp.graphs.append({
                 'image': None,
                 'path': 'plots/Module%03d.eps' % (i+1),
+                'name': '%d cluster' % (i+1),
                 'desc': 'eps plot file'
             })
 

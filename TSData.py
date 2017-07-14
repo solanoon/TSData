@@ -118,6 +118,7 @@ class TSData(object):
         # options for save
         # (not inherited, not saved)
         self.cur_path = None
+        self.workdir = None
         self.sep = ','
         self.save_df_header_prop = None # if none, all of them are saved
         self.save_SampleID = None       # only save with columns (SampleID)
@@ -179,6 +180,7 @@ class TSData(object):
 
 
         self.cur_path = path
+        self.workdir = os.path.dirname(path)
         if (self.cur_path[-4:] == '.txt'):
             self.sep = '\t'
         else:
