@@ -22,10 +22,14 @@ class TSExpGOTerm(object):
         # it's relative to parent's workdir.
         exp.name = "%s_goterm" % exp_in.name
         if (workdir is None):
-            self.exp.workdir = os.path.join(exp_in.workdir, exp.name)
+            self.exp.workdir = exp.name
         else:
             self.exp.workdir = workdir
-        os.mkdir(self.exp.workdir)
+        self.workdir = os.path.join(self.exp_in.workdir, self.exp.workdir)
+        if (not os.path.exists(self.workdir)):
+            os.mkdir(self.workdir)
+
+
     def run(self):
         # get param from tsd_out
         species = self.exp.params['species']
@@ -50,6 +54,7 @@ class TSExpGOTerm(object):
                 })
         # append result table into TSExp ...
         self.exp.tables = result_table_exp
+        self.exp.parent = self.exp_in.name
 
 
 #

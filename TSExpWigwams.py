@@ -17,7 +17,7 @@ class TSExpWigwams(object):
         self.exp.params['replication'] = "flatten"
         self.exp.name = "wigwams"
         self.exp.desc = "All time replication are averaged as wigwams doesn't supports replication."
-        self.workdir = workdir
+        self.exp.workdir = self.workdir = workdir
 
     # "flatten", "rescale", "none"
     def SetReplicationProcess(self, replication):
@@ -50,9 +50,21 @@ class TSExpWigwams(object):
         self.exp.graphs = []
         for i in range(len(clusters)):
             self.exp.graphs.append({
-                'path': 'plots/Module%d.eps' % (i+1),
+                'image': None,
+                'path': 'plots/Module%03d.eps' % (i+1),
                 'desc': 'eps plot file'
             })
+
+    def conv_eps2png(self):
+        # start converting
+        # requires: ghostscript
+        for graph in self.exp.graphs:
+            image_path = graph['path'].split('.',2)[0] + '.png'
+            graph['image'] = image_path
+            cmd = "gs -o %s -sDEVICE=pngalpha %s" % (
+                os.path.join(self.workdir, image_path), 
+                os.path.join(self.workdir, graph['path']))
+            os.system(cmd)
 
     def run(self):
         if (self.tsd == None):
@@ -98,4 +110,5 @@ class TSExpWigwams(object):
 
         # summarize output data and finish
         self.Summarize()
+        self.conv_eps2png()
         self.exp.SetFinish()
