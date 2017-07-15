@@ -4,6 +4,9 @@ import os, sys
 # do advanced analyze for TSExp
 # (2nd experiment modules)
 #
+# INFO: sub-experiment's path must be relative 
+#       with parent's workpath.
+#
 
 
 
@@ -44,11 +47,11 @@ class TSExpGOTerm(object):
             genelist = cluster['cluster']
             result_table = go.GOanalysis(genelist)
             if (not result_table.empty):
-                fn = os.path.join( self.exp_in.workdir, self.exp.workdir, '%s.csv' % name )
-                result_table.to_csv(fn, index=False)
+                fn = os.path.join( self.exp.workdir, '%s.csv' % name )
+                result_table.to_csv(os.path.join( self.exp_in.workdir, fn ), index=False)
                 desc = str(result_table['GOTerm'].iloc[0])
                 result_table_exp.append({
-                    'name': 'GOTerm of cluster %s' % name, 
+                    'name': '%s' % name, 
                     'desc': desc,
                     'path': fn
                 })

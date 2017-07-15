@@ -36,7 +36,7 @@ class TSExpWigwams(object):
                     while (len(clusters) < cluster_idx):
                         clusters.append({
                             'cluster': [],
-                            'name': '%d cluster' % (cluster_idx+1),
+                            'name': 'cluster-%03d' % (cluster_idx+1),
                             'desc': cluster_groups,
                         })
                     clusters[cluster_idx-1]['cluster'].append(cluster_gn)
@@ -52,7 +52,7 @@ class TSExpWigwams(object):
             self.exp.graphs.append({
                 'image': None,
                 'path': 'plots/Module%03d.eps' % (i+1),
-                'name': '%d cluster' % (i+1),
+                'name': 'cluster-%03d-graph' % (i+1),
                 'desc': 'eps plot file'
             })
 
