@@ -77,7 +77,6 @@ class TSExpWigwams(object):
         # TODO: use params
         # tidy tsd data into wigwams input format (workdir changed)
         wigwams_input_path = os.path.abspath(os.path.join(self.workdir, 'wigwams_input.csv'))
-        print wigwams_input_path
         # must process replication
         rep_type = self.exp.params['replication']
         if (rep_type == "flatten"):
