@@ -1,10 +1,11 @@
 import scipy.stats as stats
 import pandas as pd
+import os
 
 # default file lists to load
 list_t2g_alias = {
-    "rice": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.rice.txt",
-    "arabidopsis": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.arabidopsis.txt",
+    "rice": os.path.join(os.path.dirname(__file__), "data/GOBPname2gene.rice.txt"),
+    "arabidopsis": os.path.join(os.path.dirname(__file__), "data/GOBPname2gene.arabidopsis.txt"),
     "human": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.human.txt",
     "mouse": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.rice.txt"
 }
