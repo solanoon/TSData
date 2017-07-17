@@ -76,7 +76,8 @@ class TSExpWigwams(object):
             raise Exception('No TSExp to experiment')
         # TODO: use params
         # tidy tsd data into wigwams input format (workdir changed)
-        wigwams_input_path = 'wigwams_input.csv'
+        wigwams_input_path = os.path.abspath(os.path.join(self.workdir, 'wigwams_input.csv'))
+        print wigwams_input_path
         # must process replication
         rep_type = self.exp.params['replication']
         if (rep_type == "flatten"):
@@ -102,7 +103,7 @@ class TSExpWigwams(object):
         #    '--Expression', wigwams_input_path]):
         old_sys_argv = sys.argv
         old_workdir = os.getcwd()
-        wigwams_workdir = os.path.join( os.getcwd(), self.workdir )
+        wigwams_workdir = os.path.abspath(self.workdir)
         os.chdir(wigwams_workdir)
         sys.argv = [wigwams_workdir] + ('--Expression %s' % wigwams_input_path).split()
         wigwams_wrapper.main()
