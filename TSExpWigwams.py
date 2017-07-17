@@ -62,10 +62,14 @@ class TSExpWigwams(object):
         for graph in self.exp.graphs:
             image_path = graph['path'].split('.',2)[0] + '.png'
             graph['image'] = image_path
-            cmd = "gs -o %s -sDEVICE=pngalpha %s" % (
-                os.path.join(self.workdir, image_path), 
-                os.path.join(self.workdir, graph['path']))
-            os.system(cmd)
+            path_out = os.path.join(self.workdir, image_path)
+            path_in = os.path.join(self.workdir, graph['path'])
+            if (os.path.exist(path_in)):
+                cmd = "gs -o %s -sDEVICE=pngalpha %s" % (path_in, path_out)
+                os.system(cmd)
+            else:
+                # image unavailable
+                graph['image'] = None
 
     def run(self):
         if (self.tsd == None):
