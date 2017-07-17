@@ -59,6 +59,8 @@ class TSExp(object):
         self.stat_msg = status['stat_msg']
         self.progress = status['progress']
         self.desc = status['desc']
+
+        self.workdir = os.path.dirname(path)
     def save(self, path=None):
         if (path is None):
             path = os.path.join(self.workdir, self.name+'.json')
