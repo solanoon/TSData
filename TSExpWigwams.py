@@ -64,12 +64,14 @@ class TSExpWigwams(object):
             graph['image'] = image_path
             path_out = os.path.join(self.workdir, image_path)
             path_in = os.path.join(self.workdir, graph['path'])
-            if (os.path.exist(path_in)):
+            if (os.path.exists(path_in)):
                 cmd = "gs -o %s -sDEVICE=pngalpha %s" % (path_in, path_out)
                 os.system(cmd)
             else:
                 # image unavailable
                 graph['image'] = None
+                graph['path'] = None
+                graph['desc'] = '(inavailable)'
 
     def run(self):
         if (self.tsd == None):
