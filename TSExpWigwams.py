@@ -25,7 +25,7 @@ class TSExpWigwams(object):
 
     # summarize result and save
     def Summarize(self):
-        wigwams_out = 'exported_modules.tsv'
+        wigwams_out = os.path.join(self.workdir, 'exported_modules.tsv')
         # load cluster info
         try:
             with open(wigwams_out,'r') as f:
