@@ -1,0 +1,3 @@
+[submodule "wigwams"]
+	path = wigwams
+	url = https://github.com/bhi-kimlab/wigwams
