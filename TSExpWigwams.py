@@ -36,7 +36,7 @@ class TSExpWigwams(object):
                     while (len(clusters) < cluster_idx):
                         clusters.append({
                             'cluster': [],
-                            'name': 'cluster-%03d' % (cluster_idx+1),
+                            'name': 'cluster-%03d' % (cluster_idx),
                             'desc': cluster_groups,
                         })
                     clusters[cluster_idx-1]['cluster'].append(cluster_gn)
