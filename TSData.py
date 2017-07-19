@@ -301,6 +301,31 @@ class TSData(object):
         return len(self.df.index)
     def GetConditionCount(self):
         return len(self.conditions)
+    def IsTSExists(self, tsname):
+        return tsname in self.conditions
+    # returns timepoint, replicates
+    def GetTSTimepoint(self, tsname):
+        arr_bool = list(self.df_meta.loc['CID',:] == tsname)
+        df_extracted = self.df_meta.loc[:,arr_bool]
+        timepoints = []
+        replicates = {}
+        for i in list(df_extracted.loc['Time',:]):
+            if i not in timepoints:
+                timepoints.append(i)
+                replicates[i] = 0
+            replicates[i] += 1
+        replicates_arr = map(lambda x: replicates[x], timepoints)
+        return (timepoints, replicates_arr)
+    def GetAllTSDescription(self):
+        r = []
+        for k in self.conditions:
+            d = self.conditions[k].Get()
+            timepoints, replicates = self.GetTSTimepoint(k)
+            d['id'] = k
+            d['timepoints'] = timepoints
+            d['replicates'] = replicates
+            r.append(d)
+        return r
 
     # -------------------------
     # modifiers
