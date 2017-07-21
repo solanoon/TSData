@@ -20,6 +20,8 @@ class TSExpGOTerm(object):
     def __init__(self, exp_in, exp, workdir=None):
         self.exp_in = exp_in
         self.exp = exp
+        self.params = {}
+
         # work directory is automatically set
         # (under parent's workdir)
         # it's relative to parent's workdir.
@@ -32,10 +34,15 @@ class TSExpGOTerm(object):
         if (not os.path.exists(self.workdir)):
             os.mkdir(self.workdir)
 
+    def SetSpecies(species):
+        self.params['species'] = species
 
     def run(self):
         # get param from tsd_out
-        species = self.exp.params['species']
+        self.exp.params = self.params
+        if ('species' not in self.params):
+            raise Exception("'species' param is required")
+        species = self.params['species']
         # initialize GOTerm object
         go = GOTerm()
         go.load(species)

@@ -2,146 +2,117 @@ import numpy as np
 import pandas as pd
 import json
 import os, sys
+if sys.version_info[0] < 3: 
+    from StringIO import StringIO
+else:
+    from io import StringIO
 
 
 # implementations for extensions with TSData
+# file format
+# - first line: metadata json
+# - second line ~ end: result dataframe table
 class TSExp(object):
     def __init__(self):
         self.name = "TSExp_base"
+        self.desc = ""
+        self.log = []       # experiment result log (string list)
         self.parent = None  # (string or None) experiment parent of this exp
         self.workdir = ""
-        self.params = {}
-        self.values = []    # (value: string, name, desc: string) single value
-        self.clusters = []  # (cluster: [string], name, desc: string) clusters
-        self.graphs = []    # (path: string, name, desc) cytoscape.js ?
-        self.images = []    # (path: string, name, desc) only png, jpg, ...
-        self.files = []     # (path: string, name, desc) other types
-        self.tables = []    # (path: string, name, desc) mostly csv-formatted data
+        self.params = {}    # (key, value) params used in experiments
+        # data contains here
+        # first 2 rows:
+        # (type: file, string, number, image, stringwithfile, imagewithfile, stringhide)
+        # (display: 0, 1) - show default?
+        # (toolname: string) - analysis tool name
+        # (desc: string) - some detailed explanation with data
+        # *withfile: filename separated with last ':' character.
+        self.df = pd.DataFrame(index=['_toolname','_type','_display','_desc'], columns=[])
+
 
         # non-saved statuses
-
-        # 0: finished
-        # 1: pending
-        # 2: processing
-        # 3: (error or something else)
-        self.status = 0
-        self.stat_msg = ""
-        self.progress = 0
-        self.desc = ""
         self.children = []
 
     def __str__(self):
         return "Expname: %s\n"\
                 "WorkDir: %s\n"\
                 "ExpParam: %s\n"\
-                "Exp Result: Value %d, Clusters %d, Graphs %d, Images %d, Files %d, Tables %d"\
-                % (self.name, self.workdir, json.dumps(self.params),
-                        len(self.values), len(self.clusters), len(self.graphs),
-                        len(self.images), len(self.files), len(self.tables))
+                "Exp Result: %dx%d\n"\
+                "Logs: %s"\
+                % (self.name, self.workdir, json.dumps(self.params), self.df.shape[0], self.df.shape[1], str(self.log))
 
     # @description
     # load TSExp result from path
     def load(self, path):
+        self.workdir = os.path.dirname(path)
         with open(path,'r') as f:
-            d = json.load(f)
+            d = json.load(f.readline())
         self.values = d['values']
         self.clusters = d['clusters']
         self.graphs = d['graphs']
         self.images = d['images']
         self.files = d['files']
         self.tables = d['tables']
-        self.params = {}
-
-        status = d['status']
-        self.name = status['name']
-        self.parent = status['parent']
-        self.status = status['status']
-        self.stat_msg = status['stat_msg']
-        self.progress = status['progress']
-        self.desc = status['desc']
-
-        self.workdir = os.path.dirname(path)
+        self.params = d['params']
+        self.table = pd.read_csv(StringIO(unicode(f.read())))
     def save(self, path=None):
         if (path is None):
             path = os.path.join(self.workdir, self.name+'.json')
         with open(path,'w') as f:
             json.dump({
-                'status': {
-                    'name': self.name,
-                    'parent': self.parent,
-                    'status': self.status,
-                    'stat_msg': self.stat_msg,
-                    'progress': self.progress,
-                    'desc': self.desc
-                },
                 'values': self.values,
                 'clusters': self.clusters,
                 'graphs': self.graphs,
                 'images': self.images,
                 'files': self.files,
-                'tables': self.tables
+                'tables': self.tables,
+                'params': self.params
             }, f)
-
-    # @description
-    # Get as formatted one (this can be customized ...)
-    def format(self):
-        r = []
-        for v in self.values:
-            d = dict(v)
-            d['type'] = 'value'
-            r.append(d)
-        for v in self.clusters:
-            d = dict(v)
-            d['type'] = 'clusters'
-            r.append(d)
-        for v in self.graphs:
-            d = dict(v)
-            d['type'] = 'graphs'
-            r.append(d)
-        for v in self.images:
-            d = dict(v)
-            d['type'] = 'images'
-            r.append(d)
-        for v in self.files:
-            d = dict(v)
-            d['type'] = 'files'
-            r.append(d)
-        for v in self.tables:
-            d = dict(v)
-            d['type'] = 'tables'
-            r.append(d)
-        return r
-
-    def GetStatus(self):
-        return self.status
-    def SetError(self, stat_msg='', code=3):
-        self.status = code
-        self.stat_msg = stat_msg
-    def SetFinish(self):
-        self.status = 0
-    def SetPending(self):
-        self.status = 1
-    def SetProcessing(self):
-        self.status = 2
-    def IsFinish(self):
-        return self.status == 0
-    def IsProcessing(self):
-        return self.status == 2
-    def IsError(self):
-        return self.status >= 3
-
-    def GetProgress(self):
-        return self.progress
-    def SetProgress(self, v):
-        self.progress = v
+            f.write(self.table.to_csv())
 
     def SetParam(self, k, v):
         self.params[k] = v
-
+    def SetDefaultParam(self, k, v):
+        if (k not in self.params):
+            self.SetParam(k, v)
     def GetDesc(self):
         return self.desc
-    def GetMessage(self):
-        return self.stat_msg
+
+    # @description
+    # add column with types and etc ...
+    def AddColumn(self, cname, ctype, display=1, desc=''):
+        self.df[cname] = ''
+        self.df[cname,'_toolname'] = self.name
+        self.df[cname,'_type'] = ctype
+        self.df[cname,'_display'] = display
+        self.df[cname,'_desc'] = desc
+
+    # @description
+    # add generic data row
+    def AddRow(self, name, row_array):
+        self.df.loc[name] = row_array
+
+    # @description
+    # get addon-analysis-data from dataframe
+    # returns empty dataframe if not exists
+    def GetAnalysis(self, name):
+        return self.df[self.df.loc['_toolname'] == name]
+
+    def GetOriginalTable(self):
+        return self.GetAnalysis(self.name)
+
+    def GetAllTable(self):
+        return self.df
+
+    # @description
+    # concat addon-analysis-data into dataframe
+    def ConcatAnalysis(self, df):
+        self.df = pd.concat([self.df, df], join='outer', axis=1)
+
+    # @desciption
+    # delete addon-analysis-data from dataframe
+    def DeleteAnalysis(self, name):
+        self.df.drop(self.df.loc['_toolname'] == name,inplace=True,axis=1)
 
 
 # @description

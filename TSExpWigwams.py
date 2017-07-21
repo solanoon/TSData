@@ -12,16 +12,18 @@ import sys
 
 class TSExpWigwams(object):
     def __init__(self, tsexp, tsd, workdir):
+        # set default params
+        self.params = {}
+        self.params['replication'] = "flatten"
         self.exp = tsexp
         self.tsd = tsd  # TODO: copy
-        self.exp.params['replication'] = "flatten"
         self.exp.name = "wigwams"
         self.exp.desc = "All time replication are averaged as wigwams doesn't supports replication."
         self.exp.workdir = self.workdir = workdir
 
     # "flatten", "rescale", "none"
     def SetReplicationProcess(self, replication):
-        self.exp.params['replication'] = replication
+        self.params['replication'] = replication
 
     # summarize result and save
     def Summarize(self):
@@ -80,11 +82,12 @@ class TSExpWigwams(object):
             raise Exception('No workdir specified to process')
         if (self.exp == None):
             raise Exception('No TSExp to experiment')
-        # TODO: use params
         # tidy tsd data into wigwams input format (workdir changed)
         wigwams_input_path = os.path.abspath(os.path.join(self.workdir, 'wigwams_input.csv'))
+        # TODO: use params
+        self.exp.params = self.params
         # must process replication
-        rep_type = self.exp.params['replication']
+        rep_type = self.params['replication']
         if (rep_type == "flatten"):
             self.tsd.flatten_replication()
         elif (rep_type == "rescale"):

@@ -316,6 +316,8 @@ class TSData(object):
             replicates[i] += 1
         replicates_arr = map(lambda x: replicates[x], timepoints)
         return (timepoints, replicates_arr)
+    # get all TS description(including timepoints/replicates)
+    # returns: [ { dict, id, timepoints:[], replicates:[] } ]
     def GetAllTSDescription(self):
         r = []
         for k in self.conditions:
@@ -326,6 +328,16 @@ class TSData(object):
             d['replicates'] = replicates
             r.append(d)
         return r
+    # get Expression for time using specific gene markers
+    # (expression value is averaged, x pos calculated with: (index)/(colsize) )
+    # returns: [ (x:0~1 float, y:avg. gene expr.) ]
+    def GetGMExpression(self, gnames):
+        r = []
+        df_extracted = self.df.loc[gnames,:]
+        df_mean = df_extracted.mean(axis=0)
+        y = list(df_mean)
+        x = [float(i)/len(y) for i in range(len(y))]
+        return zip(x,y)
 
     # -------------------------
     # modifiers
