@@ -27,53 +27,54 @@ class TSExpWigwams(object):
 
     # summarize result and save
     def Summarize(self):
+        self.exp.AddColumn('cluster', 'file')
+        self.exp.AddColumn('epsplot', 'file')
+        self.exp.AddColumn('image', 'image')
+        self.exp.AddColumn('pvalue', 'value')
+
         wigwams_out = os.path.join(self.workdir, 'exported_modules.tsv')
         # load cluster info
-        try:
-            with open(wigwams_out,'r') as f:
-                clusters = []
-                for l in f.readlines()[1:]:
-                    cluster_idx, cluster_groups, cluster_gn = l.strip().split('\t')
-                    cluster_idx = int(cluster_idx)
-                    while (len(clusters) < cluster_idx):
-                        clusters.append({
-                            'cluster': [],
-                            'name': 'cluster-%03d' % (cluster_idx),
-                            'desc': cluster_groups,
-                        })
-                    clusters[cluster_idx-1]['cluster'].append(cluster_gn)
-        except Exception as e:
-            error_msg = str(e)
-            self.exp.SetError(error_msg)
+        with open(wigwams_out,'r') as f:
             clusters = []
-            raise e
+            for l in f.readlines()[1:]:
+                cluster_idx, cluster_groups, cluster_gn = l.strip().split('\t')
+                cluster_idx = int(cluster_idx)
+                while (len(clusters) < cluster_idx):
+                    clusters.append({'group':cluster_groups, 'cluster':[]})
+                clusters[cluster_idx]['cluster'].append(cluster_gn)
         # store cluster info
         self.exp.clusters = clusters
         self.exp.graphs = []
         for i in range(len(clusters)):
-            self.exp.graphs.append({
-                'image': None,
-                'path': 'plots/Module%03d.eps' % (i+1),
-                'name': 'cluster-%03d-graph' % (i+1),
-                'desc': 'eps plot file'
-            })
+            cluster_path = "clusters/%03d.txt" % (i+1)
+            plot_path = "plots/Module%03d.eps" % (i+1)
+            image_path = "plots/Module%03d.png" % (i+1)
+            abs_cluster_path = os.path.join(self.workdir, cluster_path)
+            with open(abs_cluster_path,"w") as f:
+                f.write('\n'.join(clusters[i]['cluster']))
+            self.exp.AddRow('%03d' % cluster_idx, [
+                # cluster, image, eps data, pvalue
+                cluster_path,
+                image_path,
+                plot_path,
+                "0" # TODO
+            ])
 
     def conv_eps2png(self):
         # start converting
         # requires: ghostscript
-        for graph in self.exp.graphs:
-            image_path = graph['path'].split('.',2)[0] + '.png'
-            graph['image'] = image_path
-            path_out = os.path.join(self.workdir, image_path)
-            path_in = os.path.join(self.workdir, graph['path'])
-            if (os.path.exists(path_in)):
-                cmd = "gs -o %s -sDEVICE=pngalpha %s" % (path_in, path_out)
+        for row in self.exp.GetTable().iterrows():
+            image_path = row['image']
+            abs_image_path = os.path.join(self.workdir, image_path)
+            data_path = row['epsplot']
+            abs_data_path = os.path.join(self.workdir, data_path)
+            if (os.path.exists(abs_data_path)):
+                cmd = "gs -o %s -sDEVICE=pngalpha %s" % (abs_data_path, abs_image_path)
                 os.system(cmd)
             else:
                 # image unavailable
-                graph['image'] = None
-                graph['path'] = None
-                graph['desc'] = '(inavailable)'
+                row['image'] = ''
+                row['epsplot'] = ''
 
     def run(self):
         if (self.tsd == None):

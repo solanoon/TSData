@@ -98,8 +98,10 @@ class TSExp(object):
     def GetOriginalTable(self):
         return self.GetAnalysis(self.name)
 
-    def GetAllTable(self):
-        return self.df
+    # @description
+    # get table without metadata
+    def GetTable(self):
+        return df.loc[not df.index.startswith('_')]
 
     # @description
     # concat addon-analysis-data into dataframe
