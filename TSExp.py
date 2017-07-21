@@ -18,7 +18,6 @@ class TSExp(object):
         self.desc = ""
         self.log = []       # experiment result log (string list)
         self.parent = None  # (string or None) experiment parent of this exp
-        self.workdir = ""
         self.params = {}    # (key, value) params used in experiments
         # data contains here
         # first 2 rows:
@@ -31,6 +30,7 @@ class TSExp(object):
 
 
         # non-saved statuses
+        self.workdir = ""
         self.children = []
 
     def __str__(self):
@@ -47,28 +47,25 @@ class TSExp(object):
         self.workdir = os.path.dirname(path)
         with open(path,'r') as f:
             d = json.load(f.readline())
-        self.values = d['values']
-        self.clusters = d['clusters']
-        self.graphs = d['graphs']
-        self.images = d['images']
-        self.files = d['files']
-        self.tables = d['tables']
+        self.name = d['name']
+        self.desc = d['desc']
+        self.log = d['log']
+        self.parent = d['parent']
         self.params = d['params']
-        self.table = pd.read_csv(StringIO(unicode(f.read())))
+        self.df = pd.read_csv(StringIO(unicode(f.read())))
     def save(self, path=None):
         if (path is None):
             path = os.path.join(self.workdir, self.name+'.json')
         with open(path,'w') as f:
             json.dump({
-                'values': self.values,
-                'clusters': self.clusters,
-                'graphs': self.graphs,
-                'images': self.images,
-                'files': self.files,
-                'tables': self.tables,
+                'name': self.name,
+                'desc': self.desc,
+                'log': self.log,
+                'parent': self.parent,
                 'params': self.params
             }, f)
-            f.write(self.table.to_csv())
+            f.write('\n')
+            f.write(self.df.to_csv())
 
     def SetParam(self, k, v):
         self.params[k] = v
@@ -82,10 +79,10 @@ class TSExp(object):
     # add column with types and etc ...
     def AddColumn(self, cname, ctype, display=1, desc=''):
         self.df[cname] = ''
-        self.df[cname,'_toolname'] = self.name
-        self.df[cname,'_type'] = ctype
-        self.df[cname,'_display'] = display
-        self.df[cname,'_desc'] = desc
+        self.df[cname]['_toolname'] = self.name
+        self.df[cname]['_type'] = ctype
+        self.df[cname]['_display'] = display
+        self.df[cname]['_desc'] = desc
 
     # @description
     # add generic data row
