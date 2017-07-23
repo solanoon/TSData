@@ -41,7 +41,7 @@ class TSExpWigwams(object):
                 cluster_idx = int(cluster_idx)
                 while (len(clusters) < cluster_idx):
                     clusters.append({'group':cluster_groups, 'cluster':[]})
-                clusters[cluster_idx]['cluster'].append(cluster_gn)
+                clusters[cluster_idx-1]['cluster'].append(cluster_gn)
         # store cluster info
         self.exp.clusters = clusters
         self.exp.graphs = []
@@ -49,10 +49,13 @@ class TSExpWigwams(object):
             cluster_path = "clusters/%03d.txt" % (i+1)
             plot_path = "plots/Module%03d.eps" % (i+1)
             image_path = "plots/Module%03d.png" % (i+1)
+            abs_cluster_folder = os.path.join(self.workdir, "clusters")
+            if (not os.path.exists(abs_cluster_folder)):
+                os.mkdir(abs_cluster_folder)
             abs_cluster_path = os.path.join(self.workdir, cluster_path)
             with open(abs_cluster_path,"w") as f:
                 f.write('\n'.join(clusters[i]['cluster']))
-            self.exp.AddRow('%03d' % cluster_idx, [
+            self.exp.AddRow('%03d' % (i+1), [
                 # cluster, image, eps data, pvalue
                 cluster_path,
                 image_path,
@@ -63,7 +66,7 @@ class TSExpWigwams(object):
     def conv_eps2png(self):
         # start converting
         # requires: ghostscript
-        for row in self.exp.GetTable().iterrows():
+        for idx,row in self.exp.GetTable().iterrows():
             image_path = row['image']
             abs_image_path = os.path.join(self.workdir, image_path)
             data_path = row['epsplot']
@@ -122,4 +125,3 @@ class TSExpWigwams(object):
         # summarize output data and finish
         self.Summarize()
         self.conv_eps2png()
-        self.exp.SetFinish()

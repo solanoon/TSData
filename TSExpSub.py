@@ -17,8 +17,7 @@ import os, sys
 # input: (gene cluster)
 # output: (result table)
 class TSExpGOTerm(object):
-    def __init__(self, exp_in, exp, workdir=None):
-        self.exp_in = exp_in
+    def __init__(self, exp, workdir=None):
         self.exp = exp
         self.params = {}
 
@@ -39,29 +38,38 @@ class TSExpGOTerm(object):
 
     def run(self):
         # get param from tsd_out
-        self.exp.params = self.params
+        self.exp.params.update(self.params)
         if ('species' not in self.params):
             raise Exception("'species' param is required")
         species = self.params['species']
         # initialize GOTerm object
         go = GOTerm()
         go.load(species)
+        # add column for GOTerm analysis
+        self.exp.AddColumn('goterm', 'value')
+        self.exp.AddColumn('goterm-file', 'file')
+        self.exp.AddColumn('goterm-pvalue', 'value')
         # run GOTerm analysis for each cluster (gene)
         # ... and save each table.
         result_table_exp = []
-        for cluster in self.exp_in.clusters:
-            name = cluster['name']
-            genelist = cluster['cluster']
+        for idx,row in self.exp_in.GetTable().iterrows():
+            name = row.index
+            genelist_fn = row['cluster']
+            with open(os.path.join(self.exp_in.workdir,genelist_fn),"r") as f:
+                genelist = f.readlines()
             result_table = go.GOanalysis(genelist)
             if (not result_table.empty):
                 fn = os.path.join( self.exp.workdir, '%s.csv' % name )
                 result_table.to_csv(os.path.join( self.exp_in.workdir, fn ), index=False)
                 desc = str(result_table['GOTerm'].iloc[0])
-                result_table_exp.append({
-                    'name': '%s' % name, 
-                    'desc': desc,
-                    'path': fn
-                })
+                pval = float(result_table['GOTerm'].iloc[1])
+            else:
+                fn = ''
+                desc = '(no GOTerm found)'
+                pval = 1
+            row['goterm'] = desc
+            row['goterm-file'] = fn
+            row['goterm-pvalue'] = pval
         # append result table into TSExp ...
         self.exp.tables = result_table_exp
         self.exp.parent = self.exp_in.name

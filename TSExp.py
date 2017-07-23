@@ -99,9 +99,9 @@ class TSExp(object):
         return self.GetAnalysis(self.name)
 
     # @description
-    # get table without metadata
+    # get table without metadata (not starts with '_')
     def GetTable(self):
-        return df.loc[not df.index.startswith('_')]
+        return self.df.loc[ [not x.startswith('_') for x in self.df.index] ]
 
     # @description
     # concat addon-analysis-data into dataframe
