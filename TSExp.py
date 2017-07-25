@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import json
 import os, sys
+from itertools import groupby
 if sys.version_info[0] < 3: 
     from StringIO import StringIO
 else:
@@ -17,7 +18,7 @@ class TSExp(object):
         self.name = "TSExp_base"
         self.desc = ""
         self.log = []       # experiment result log (string list)
-        self.parent = None  # (string or None) experiment parent of this exp
+        #self.parent = None  # (string or None) experiment parent of this exp   # (depreciated)
         self.params = {}    # (key, value) params used in experiments
         # data contains here
         # first 2 rows:
@@ -41,6 +42,33 @@ class TSExp(object):
                 "Logs: %s"\
                 % (self.name, self.workdir, json.dumps(self.params), self.df.shape[0], self.df.shape[1], str(self.log))
 
+    def to_json(self):
+        r = {}
+        # each cell should contain metadata consistently
+        r = self.GetTable().to_json('split')
+        _toolname = self.df.loc['_toolname']
+        _display = self.df.loc['_display']
+        _desc = self.df.loc['_desc']
+        _type = self.df.loc['_type']    # append to metadata
+        data_new = []
+        for row,gname in zip(r['data'], r['index']):
+            row_new = [{'value':gname, 'type':'string'}]
+            for v,t in zip(row, _type):
+                row_new.append({'value':v, 'type':t})
+            data_new.append(row_new)
+        r['data'] = data_new
+        del r['index']
+        r['columns'] = [{'name':x} for x in r['columns']]
+        idx = 0
+        for display,desc in zip(_display, _desc):
+            r[idx]['display'] = display
+            r[idx]['desc'] = desc
+            idx += 1
+        # use toolname to make columns_top
+        columns_top = [(i, len(list(_))) for i,_ in groupby(_toolname)]
+        r['columns_top'] = columns_top
+        return r
+
     # @description
     # load TSExp result from path
     def load(self, path):
@@ -50,7 +78,7 @@ class TSExp(object):
         self.name = d['name']
         self.desc = d['desc']
         self.log = d['log']
-        self.parent = d['parent']
+        #self.parent = d['parent']
         self.params = d['params']
         self.df = pd.read_csv(StringIO(unicode(f.read())))
     def save(self, path=None):
@@ -61,7 +89,7 @@ class TSExp(object):
                 'name': self.name,
                 'desc': self.desc,
                 'log': self.log,
-                'parent': self.parent,
+                #'parent': self.parent,
                 'params': self.params
             }, f)
             f.write('\n')
@@ -133,7 +161,7 @@ class TSExpGroup(object):
         fp_list = []
         for fp in os.listdir(path):
             fp_rel = os.path.join(path, fp)
-            if (os.path.isfile(fp_rel) and fp.endswith(".json")):
+            if (os.path.isfile(fp_rel) and fp.endswith(".exp")):
                 fp_list.append(fp_rel)
         for fp in fp_list:
             exp = TSExp()
@@ -149,7 +177,9 @@ class TSExpGroup(object):
         # - child
         # parent
         # ...
+        # -> depreciated
         for _, exp in self.dict_exp.items():
+            """
             if (exp.parent is not None):
                 parent_name = exp.parent
                 if (parent_name not in self.dict_exp):
@@ -162,5 +192,13 @@ class TSExpGroup(object):
                 self.list_exp.append(exp)
                 for child in exp.children:
                     self.list_exp.append(child)
+            """
+            self.list_exp.append(exp)
 
         self.path = path
+
+    def to_json(self):
+        r = []
+        for exp in self.list_exp:
+            r.append( exp.to_json() )
+        return r

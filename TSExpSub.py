@@ -24,16 +24,17 @@ class TSExpGOTerm(object):
         # work directory is automatically set
         # (under parent's workdir)
         # it's relative to parent's workdir.
-        exp.name = "%s_goterm" % exp_in.name
+        name = "%s_goterm" % exp.name
         if (workdir is None):
-            self.exp.workdir = exp.name
+            self.workdir = name
         else:
-            self.exp.workdir = workdir
-        self.workdir = os.path.join(self.exp_in.workdir, self.exp.workdir)
+            self.workdir = workdir
+        self.workdir = os.path.join(self.exp.workdir, self.workdir)
+        print self.workdir
         if (not os.path.exists(self.workdir)):
             os.mkdir(self.workdir)
 
-    def SetSpecies(species):
+    def SetSpecies(self, species):
         self.params['species'] = species
 
     def run(self):
@@ -51,28 +52,27 @@ class TSExpGOTerm(object):
         self.exp.AddColumn('goterm-pvalue', 'value')
         # run GOTerm analysis for each cluster (gene)
         # ... and save each table.
-        result_table_exp = []
-        for idx,row in self.exp_in.GetTable().iterrows():
-            name = row.index
+        for idx,row in self.exp.GetTable().iterrows():
+            name = row.index.values.astype(str)[0]
             genelist_fn = row['cluster']
-            with open(os.path.join(self.exp_in.workdir,genelist_fn),"r") as f:
+            with open(os.path.join(self.exp.workdir,genelist_fn),"r") as f:
                 genelist = f.readlines()
             result_table = go.GOanalysis(genelist)
             if (not result_table.empty):
-                fn = os.path.join( self.exp.workdir, '%s.csv' % name )
-                result_table.to_csv(os.path.join( self.exp_in.workdir, fn ), index=False)
+                fn = os.path.join( self.workdir, '%s.csv' % name )
+                result_table.to_csv( fn , index=False)
                 desc = str(result_table['GOTerm'].iloc[0])
-                pval = float(result_table['GOTerm'].iloc[1])
+                pval = float(result_table['pvalue'].iloc[0])
             else:
                 fn = ''
                 desc = '(no GOTerm found)'
                 pval = 1
-            row['goterm'] = desc
-            row['goterm-file'] = fn
-            row['goterm-pvalue'] = pval
+            self.exp.df.loc[idx]['goterm'] = desc
+            self.exp.df.loc[idx]['goterm-file'] = fn
+            self.exp.df.loc[idx]['goterm-pvalue'] = pval
         # append result table into TSExp ...
-        self.exp.tables = result_table_exp
-        self.exp.parent = self.exp_in.name
+        #self.exp.tables = result_table_exp
+        #self.exp.parent = self.exp_in.name
 
 
 #
