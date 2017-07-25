@@ -45,7 +45,7 @@ class TSExp(object):
     def to_json(self):
         r = {}
         # each cell should contain metadata consistently
-        r = self.GetTable().to_json('split')
+        r = json.loads( self.GetTable().to_json(orient='split') )
         _toolname = self.df.loc['_toolname']
         _display = self.df.loc['_display']
         _desc = self.df.loc['_desc']
@@ -59,10 +59,11 @@ class TSExp(object):
         r['data'] = data_new
         del r['index']
         r['columns'] = [{'name':x} for x in r['columns']]
+        # set column information
         idx = 0
         for display,desc in zip(_display, _desc):
-            r[idx]['display'] = display
-            r[idx]['desc'] = desc
+            r['columns'][idx]['display'] = display
+            r['columns'][idx]['desc'] = desc
             idx += 1
         # use toolname to make columns_top
         columns_top = [(i, len(list(_))) for i,_ in groupby(_toolname)]
@@ -74,13 +75,13 @@ class TSExp(object):
     def load(self, path):
         self.workdir = os.path.dirname(path)
         with open(path,'r') as f:
-            d = json.load(f.readline())
+            d = json.loads(f.readline())
+            self.df = pd.read_csv(StringIO(unicode(f.read())), index_col=0)
         self.name = d['name']
         self.desc = d['desc']
         self.log = d['log']
         #self.parent = d['parent']
         self.params = d['params']
-        self.df = pd.read_csv(StringIO(unicode(f.read())))
     def save(self, path=None):
         if (path is None):
             path = os.path.join(self.workdir, self.name+'.json')
@@ -129,7 +130,7 @@ class TSExp(object):
     # @description
     # get table without metadata (not starts with '_')
     def GetTable(self):
-        return self.df.loc[ [not x.startswith('_') for x in self.df.index] ]
+        return self.df.loc[ [not str(x).startswith('_') for x in self.df.index] ]
 
     # @description
     # concat addon-analysis-data into dataframe
