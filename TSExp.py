@@ -68,6 +68,7 @@ class TSExp(object):
             idx += 1
         # use toolname to make columns_top
         columns_top = [(i, len(list(_))) for i,_ in groupby(_toolname)]
+        columns_top[0] = (columns_top[0][0], columns_top[0][1]+1)   # due to column 'name' 
         r['columns_top'] = columns_top
         return r
 
