@@ -328,10 +328,10 @@ class TSData(object):
             d['replicates'] = replicates
             r.append(d)
         return r
-    # get Expression for time using specific gene markers
+    # get Gene expression profile for time using specific gene markers
     # (expression value is averaged, x pos calculated with: (index)/(colsize) )
     # returns: [ (x:0~1 float, y:avg. gene expr.) ]
-    def GetGMExpression(self, gnames):
+    def GetProfile(self, gnames):
         r = []
         df_extracted = self.df.loc[gnames,:]
         df_mean = df_extracted.mean(axis=0)

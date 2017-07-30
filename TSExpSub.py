@@ -47,9 +47,9 @@ class TSExpGOTerm(object):
         go = GOTerm()
         go.load(species)
         # add column for GOTerm analysis
-        self.exp.AddColumn('goterm', 'value')
-        self.exp.AddColumn('goterm-file', 'file')
-        self.exp.AddColumn('goterm-pvalue', 'value')
+        self.exp.AddColumn('goterm', 'value', 'goterm')
+        self.exp.AddColumn('goterm-file', 'file', 'goterm')
+        self.exp.AddColumn('goterm-pvalue', 'value', 'goterm')
         # run GOTerm analysis for each cluster (gene)
         # ... and save each table.
         for idx,row in self.exp.GetTable().iterrows():

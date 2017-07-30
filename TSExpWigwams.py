@@ -27,21 +27,37 @@ class TSExpWigwams(object):
 
     # summarize result and save
     def Summarize(self):
+        self.exp.AddColumn('group', 'value')
         self.exp.AddColumn('cluster', 'file')
         self.exp.AddColumn('epsplot', 'file')
         self.exp.AddColumn('image', 'image')
         self.exp.AddColumn('pvalue', 'value')
 
-        wigwams_out = os.path.join(self.workdir, 'exported_modules.tsv')
         # load cluster info
-        with open(wigwams_out,'r') as f:
-            clusters = []
-            for l in f.readlines()[1:]:
-                cluster_idx, cluster_groups, cluster_gn = l.strip().split('\t')
-                cluster_idx = int(cluster_idx)
-                while (len(clusters) < cluster_idx):
-                    clusters.append({'group':cluster_groups, 'cluster':[]})
-                clusters[cluster_idx-1]['cluster'].append(cluster_gn)
+        # - legacy code reads exported_modules
+        # - new code reads swept-modules
+        _legacy = False
+        if (_legacy):
+            wigwams_out = os.path.join(self.workdir, 'exported_modules.tsv')
+            with open(wigwams_out,'r') as f:
+                clusters = []
+                for l in f.readlines()[1:]:
+                    cluster_idx, cluster_groups, cluster_gn = l.strip().split('\t')
+                    cluster_idx = int(cluster_idx)
+                    while (len(clusters) < cluster_idx):
+                        clusters.append({'group':cluster_groups, 'cluster':[]})
+                    clusters[cluster_idx-1]['cluster'].append(cluster_gn)
+        else:
+            wigwams_out = os.path.join(self.workdir, 'intermediate-module-structures', 'swept_modules.tsv')
+            with open(wigwams_out,'r') as f:
+                clusters = []
+                for l in f.readlines():
+                    clustername,seed,setsize,pvalue,genelist = l.strip().split('\t')
+                    clusters.append({
+                        'group': clustername,
+                        'cluster': genelist.split(','),
+                        'pvalue': pvalue
+                    })
         # store cluster info
         self.exp.clusters = clusters
         self.exp.graphs = []
@@ -57,10 +73,11 @@ class TSExpWigwams(object):
                 f.write('\n'.join(clusters[i]['cluster']))
             self.exp.AddRow('%03d' % (i+1), [
                 # cluster, image, eps data, pvalue
+                clusters[i]['group'],
                 cluster_path,
-                image_path,
                 plot_path,
-                "0" # TODO
+                image_path,
+                clusters[i]['pvalue']
             ])
 
     def conv_eps2png(self):

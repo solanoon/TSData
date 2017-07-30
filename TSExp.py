@@ -108,9 +108,11 @@ class TSExp(object):
 
     # @description
     # add column with types and etc ...
-    def AddColumn(self, cname, ctype, display=1, desc=''):
+    def AddColumn(self, cname, ctype, toolname=None, display=1, desc=''):
+        if (toolname is None):
+            toolname = self.name
         self.df[cname] = ''
-        self.df[cname]['_toolname'] = self.name
+        self.df[cname]['_toolname'] = toolname
         self.df[cname]['_type'] = ctype
         self.df[cname]['_display'] = display
         self.df[cname]['_desc'] = desc
