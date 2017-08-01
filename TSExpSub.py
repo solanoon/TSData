@@ -1,5 +1,6 @@
 from analyzer.GOTerm import GOTerm
 import os, sys
+import math
 #
 # do advanced analyze for TSExp
 # (2nd experiment modules)
@@ -62,7 +63,7 @@ class TSExpGOTerm(object):
                 fn = os.path.join( self.workdir, '%s.csv' % name )
                 result_table.to_csv( fn , index=False)
                 desc = str(result_table['GOTerm'].iloc[0])
-                pval = float(result_table['pvalue'].iloc[0])
+                pval = -math.log10( float(result_table['pvalue'].iloc[0]) ) # convert to log-scale
             else:
                 fn = ''
                 desc = '(no GOTerm found)'

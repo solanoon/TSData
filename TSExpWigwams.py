@@ -53,6 +53,7 @@ class TSExpWigwams(object):
                 clusters = []
                 for l in f.readlines():
                     clustername,seed,setsize,pvalue,genelist = l.strip().split('\t')
+                    pvalue = float(pvalue) * -1 # convert to log-scale value to positive
                     clusters.append({
                         'group': clustername,
                         'cluster': genelist.split(','),
