@@ -50,7 +50,7 @@ class TSExpGOTerm(object):
         # add column for GOTerm analysis
         self.exp.AddColumn('goterm', 'value', 'goterm')
         self.exp.AddColumn('goterm-file', 'file', 'goterm')
-        self.exp.AddColumn('goterm-pvalue', 'value', 'goterm')
+        self.exp.AddColumn('goterm-pvalue', 'pvalue', 'goterm')
         # run GOTerm analysis for each cluster (gene)
         # ... and save each table.
         for idx,row in self.exp.GetTable().iterrows():
@@ -67,7 +67,7 @@ class TSExpGOTerm(object):
             else:
                 fn = ''
                 desc = '(no GOTerm found)'
-                pval = 1
+                pval = 0    # 'zero' as log10 value
             self.exp.df.loc[idx]['goterm'] = desc
             self.exp.df.loc[idx]['goterm-file'] = fn
             self.exp.df.loc[idx]['goterm-pvalue'] = pval

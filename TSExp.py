@@ -58,8 +58,11 @@ class TSExp(object):
             data_new.append(row_new)
         r['data'] = data_new
         del r['index']
-        r['columns'] = [{'name':x} for x in r['columns']]
-        r['columns'].insert(0,{'name':'name'})
+        r['columns'] = [{'name':x,'sortable':False} for x in r['columns']]
+        r['columns'].insert(0,{'name':'name', 'sortable':True})
+        for col in r['columns']:
+            if col['name'].find('pvalue') >= 0:
+                col['sortable'] = True
         # set column information
         idx = 0
         for display,desc in zip(_display, _desc):

@@ -31,7 +31,7 @@ class TSExpWigwams(object):
         self.exp.AddColumn('cluster', 'file')
         self.exp.AddColumn('epsplot', 'file')
         self.exp.AddColumn('image', 'image')
-        self.exp.AddColumn('pvalue', 'value')
+        self.exp.AddColumn('pvalue', 'pvalue')
 
         # load cluster info
         # - legacy code reads exported_modules
