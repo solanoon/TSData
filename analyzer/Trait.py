@@ -4,14 +4,16 @@ import os
 
 # default file lists to load
 list_t2g_alias = {
-    "rice": os.path.join(os.path.dirname(__file__), "data/GOBPname2gene.rice.txt"),
-    "arabidopsis": os.path.join(os.path.dirname(__file__), "data/GOBPname2gene.arabidopsis.txt"),
-    "human": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.human.txt",
-    "mouse": "/data/bh_lab/hongryul/GOanalysis/GOBPname2gene.rice.txt"
+    "GOTerm-rice": os.path.join(os.path.dirname(__file__), "data/GOBPname2gene.rice.txt"),
+    "GOTerm-arabidopsis": os.path.join(os.path.dirname(__file__), "data/GOBPname2gene.arabidopsis.txt"),
+    "GOTerm-human": os.path.join(os.path.dirname(__file__), "/data/GOBPname2gene.human.txt"),
+    "GOTerm-mouse": os.path.join(os.path.dirname(__file__), "/data/GOBPname2gene.rice.txt"),
+    "Pathway-arabidopsis": os.path.join(os.path.dirname(__file__), "/data/pathwayname2gene.ath.txt"),
+    "Motif-arabidopsis": os.path.join(os.path.dirname(__file__), "/data/kmer2genes.k6.n1.txt")
 }
 
 # trait to genes file list
-class GOTerm(object):
+class Trait(object):
     def __init__(self):
         self.dic_trait2gene = {}
         self.dic_gene2trait = {}

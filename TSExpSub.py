@@ -1,4 +1,4 @@
-from analyzer.GOTerm import GOTerm
+from analyzer.Trait import Trait
 import os, sys
 import math
 #
@@ -13,19 +13,20 @@ import math
 
 #
 # @description
-# Do GOTerm analysis for each (gene) clusters
+# Do Trait analysis for each (gene) clusters
 #
 # input: (gene cluster)
 # output: (result table)
-class TSExpGOTerm(object):
-    def __init__(self, exp, workdir=None):
+class TSExpTrait(object):
+    def __init__(self, exp, traitname, workdir=None):
         self.exp = exp
+        self.traitname = traitname
         self.params = {}
 
         # work directory is automatically set
         # (under parent's workdir)
         # it's relative to parent's workdir.
-        name = "%s_goterm" % exp.name
+        name = "%s_%s" % (exp.name, self.traitname)
         if (workdir is None):
             self.workdir = name
         else:
@@ -45,12 +46,12 @@ class TSExpGOTerm(object):
             raise Exception("'species' param is required")
         species = self.params['species']
         # initialize GOTerm object
-        go = GOTerm()
-        go.load(species)
+        go = Trait()
+        go.load("%s-%s" % (self.traitname, species))
         # add column for GOTerm analysis
-        self.exp.AddColumn('goterm', 'value', 'goterm')
-        self.exp.AddColumn('goterm-file', 'file', 'goterm')
-        self.exp.AddColumn('goterm-pvalue', 'pvalue', 'goterm')
+        self.exp.AddColumn(self.traitname, 'value', 'goterm')
+        self.exp.AddColumn('%s-file' % self.traitname, 'file', 'goterm')
+        self.exp.AddColumn('%s-pvalue' % self.traitname, 'pvalue', 'goterm')
         # run GOTerm analysis for each cluster (gene)
         # ... and save each table.
         for idx,row in self.exp.GetTable().iterrows():
@@ -66,36 +67,24 @@ class TSExpGOTerm(object):
                 pval = -math.log10( float(result_table['pvalue'].iloc[0]) ) # convert to log-scale
             else:
                 fn = ''
-                desc = '(no GOTerm found)'
+                desc = '-'
                 pval = 0    # 'zero' as log10 value
-            self.exp.df.loc[idx]['goterm'] = desc
-            self.exp.df.loc[idx]['goterm-file'] = fn
-            self.exp.df.loc[idx]['goterm-pvalue'] = pval
+            self.exp.df.loc[idx][self.traitname] = desc
+            self.exp.df.loc[idx]['%s-file' % self.traitname] = fn
+            self.exp.df.loc[idx]['%s-pvalue' % self.traitname] = pval
         # append result table into TSExp ...
         #self.exp.tables = result_table_exp
         #self.exp.parent = self.exp_in.name
 
 
-#
-# @description
-# Do KEGG Pathway analysis for each (gene) clusters
-#
-# input: (gene cluster)
-# output: (result table)
-class TSExpPathway(object):
-    def __init__(self):
-        pass
 
+def TSExpGOTerm(exp, workdir=None):
+    return TSExpTrait(exp, 'GOTerm', workdir)
 
+def TSExpPathway(exp, workdir=None):
+    return TSExpTrait(exp, 'Pathway', workdir)
 
-#
-# @description
-# Do Promotor analysis for each (gene) clusters
-#
-# input: (gene cluster)
-# output: (result table)
-class TSExpPromotor(object):
-    def __init__(self):
-        pass
+def TSExpMotif(exp, workdir=None):
+    return TSExpTrait(exp, 'Motif', workdir)
 
 
