@@ -49,9 +49,9 @@ class TSExpTrait(object):
         go = Trait()
         go.load("%s-%s" % (self.traitname, species))
         # add column for GOTerm analysis
-        self.exp.AddColumn(self.traitname, 'value', 'goterm')
-        self.exp.AddColumn('%s-file' % self.traitname, 'file', 'goterm')
-        self.exp.AddColumn('%s-pvalue' % self.traitname, 'pvalue', 'goterm')
+        self.exp.AddColumn(self.traitname, 'value', self.traitname)
+        self.exp.AddColumn('%s-file' % self.traitname, 'file', self.traitname)
+        self.exp.AddColumn('%s-pvalue' % self.traitname, 'pvalue', self.traitname)
         # run GOTerm analysis for each cluster (gene)
         # ... and save each table.
         for idx,row in self.exp.GetTable().iterrows():
