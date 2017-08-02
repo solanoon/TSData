@@ -42,9 +42,9 @@ class TSExpTrait(object):
     def run(self):
         # get param from tsd_out
         self.exp.params.update(self.params)
-        if ('species' not in self.params):
+        if ('species' not in self.exp.params):
             raise Exception("'species' param is required")
-        species = self.params['species']
+        species = self.exp.params['species']
         # initialize GOTerm object
         go = Trait()
         go.load("%s-%s" % (self.traitname, species))
