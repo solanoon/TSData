@@ -29,10 +29,16 @@ def GetTSFromString(s):
     s = s.strip()
     if (s[-1] == 'm'):
         return float(s[:-1]) / 60.0
+    elif (s[-3:] == 'min'):
+        return float(s[:-3]) / 60.0
     elif (s[-1] == 'h'):
         return float(s[:-1])
+    elif (s[-4:] == 'hour'):
+        return float(s[:-4])
     elif (s[-1] == 'D'):
         return float(s[:-1]) * 60
+    elif (s[-3:] == 'day'):
+        return float(s[:-3]) * 60
     elif (s[-1] == 'M'):
         return float(s[:-1]) * 60 * 30
     else:
