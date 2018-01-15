@@ -588,3 +588,7 @@ def merge(arr_ts):
 
     return ts_r
 
+def load(fpath):
+    tsd = TSData()
+    tsd.load(fpath)
+    return tsd
