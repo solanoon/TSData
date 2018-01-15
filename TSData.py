@@ -138,7 +138,12 @@ class TSData(object):
                 "Sample count: %d\n"+\
                 "Gene count: %d") % (self.GetConditionCount(), len(self.df_meta.columns), len(self.df.index))
 
-    def getCondition(self, key):
+    def getConditionNames(self):
+        return self.conditions.key()
+
+    def getCondition(self, key=None):
+        if (key is None):
+            return self.conditions.items()[0][1]
         if (key not in self.conditions):
             self.conditions[key] = TSCondition()
         return self.conditions[key]
