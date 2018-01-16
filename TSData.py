@@ -27,6 +27,8 @@ from io import StringIO
 # @description: Get time data in hours
 def GetTSFromString(s):
     s = s.strip()
+    if (s[-1] == 's'):
+        s = s[:-1]	# days, months...
     if (s[-1] == 'm'):
         return float(s[:-1]) / 60.0
     elif (s[-3:] == 'min'):
@@ -35,7 +37,7 @@ def GetTSFromString(s):
         return float(s[:-1])
     elif (s[-4:] == 'hour'):
         return float(s[:-4])
-    elif (s[-1] == 'D'):
+    elif (s[-1] == 'D' or s[-1] == 'd'):
         return float(s[:-1]) * 60
     elif (s[-3:] == 'day'):
         return float(s[:-3]) * 60
@@ -47,6 +49,9 @@ def GetTSFromString(s):
 
 def GetRepFromString(s):
     raise Exception("Cannot extract replication from string: %s" % s)
+
+def convertTime2Int(l):
+	return [GetTSFromString(e) for e in l]
 
 
 # Condition desc (kind of metadata, not must required)
@@ -64,7 +69,7 @@ class TSCondition(object):
 
     def __repr__(self):
         #return self.__dict__
-        return json.dumps(Get(self))
+        return json.dumps(self.Get())
 
     # get dict array
     def Get(self):
@@ -138,8 +143,17 @@ class TSData(object):
                 "Sample count: %d\n"+\
                 "Gene count: %d") % (self.GetConditionCount(), len(self.df_meta.columns), len(self.df.index))
 
+    def getSampleNames(self):
+        return self.df_meta.iloc[0]
+
+    def getTimePoints(self):
+        return self.df_meta.iloc[1]
+
     def getConditionNames(self):
-        return self.conditions.key()
+        return self.conditions.keys()
+
+    def getExpression(self, gn):
+		return self.df.loc()[gn]
 
     def getCondition(self, key=None):
         if (key is None):
