@@ -226,10 +226,12 @@ class TSData(object):
 					self.conditions[cid] = tscond
 			elif (sectionname == "###TSDataHeader"):
 				# TODO merge matrix with previous one
-				self.df_meta = pd.read_csv(StringIO(unicode(mat_data)), sep=self.sep, index_col=0)
+				_uni = unicode(mat_data.decode('utf-8'))
+				self.df_meta = pd.read_csv(StringIO(_uni), sep=self.sep, index_col=0)
 			elif (sectionname == "###TSDataMatrix"):
 				# TODO merge matrix with previous one
-				self.df = pd.read_csv(StringIO(unicode(mat_data)), sep=self.sep, index_col=0)
+				_uni = unicode(mat_data.decode('utf-8'))
+				self.df = pd.read_csv(StringIO(_uni), sep=self.sep, index_col=0)
 			elif (sectionname == "###TSDataEvent"):
 				print("###TSDataEvent section is not currently supported, sorry.")
 
