@@ -54,6 +54,19 @@ def GetRepFromString(s):
 def convertTime2Int(l):
 	return [GetTSFromString(e) for e in l]
 
+def convertTime2Str(i):
+	# per hour
+	r = []
+	if (i > 24):
+		r.append(str(int(i/24))+'d')
+		i = i % 24
+	if (i >= 1):
+		r.append(str(int(i))+'h')
+		i = i % 1
+	if (i > 0):
+		r.append(str(int(i*60))+'m')
+	return ' '.join(r)
+
 
 # Condition desc (kind of metadata, not must required)
 # used in: TSData.conditions
@@ -69,7 +82,6 @@ class TSCondition(object):
 		self.stress = []		# kind of 'tag'
 
 	def __repr__(self):
-		#return self.__dict__
 		return json.dumps(self.Get())
 
 	# get dict array
@@ -138,16 +150,47 @@ class TSData(object):
 
 	def __str__(self):
 		# tell how many samples / conditions are existing
-		return ("Metadata Info:\n"+\
+		return (("Metadata Info:\n"+\
 				str(self.metadata)+"\n"+\
 				"Series(Condition) count: %d\n"+\
 				"Sample count: %d\n"+\
 				"Gene count: %d") % (self.GetConditionCount(), len(self.df_meta.columns), len(self.df.index))
+				+ ('\nTimePoints:\n%s' % str(self.getTimePoints()))
+				+ ('\nReplications: %d' % len(self.getReplication()))
+				)
 
 	def getSampleNames(self):
 		return self.df_meta.iloc[0]
 
-	def getTimePoints(self):
+	# if force_convert=='integer', all item is converted into sequential integer number.
+	#   ex) 0, 0, later, later, last, last --> 0, 0, 1, 1, 2, 1
+	# if force_convert=='string', all item is converted into readable string.
+	#   ex) 0, 60, 120 --> 0, 1h, 2h
+	def getTimePoints(self, force_convert=None):
+		if (force_convert == 'integer'):
+			i = 0
+			tps = self.df_meta.iloc[1]
+			tpnow = tp[0]
+			r = []
+			for tp in tps:
+				if tp != tpnow:
+					tpnow = tp
+					i += 1
+				r.append(i)
+			return r
+		elif (force_convert == 'string'):
+			tps = self.df_meta.iloc[1]
+			tpnow = tp[0]
+			conv = lambda x: float(x) if x.replace('.','').isdigit() else x
+			t = conv(tpnow)
+			r = []
+			for tp in tps:
+				if tp != tpnow:
+					tpnow = tp
+					t = conv(tpnow)
+					i += 1
+				r.append(t)
+			return r
 		return self.df_meta.iloc[1]
 
 	def getConditionNames(self):
@@ -156,16 +199,9 @@ class TSData(object):
 	def getExpression(self, gn):
 		return self.df.loc()[gn]
 
-	def getCondition(self, key=None):
-		if (key is None):
-			return self.conditions.items()[0][1]
-		if (key not in self.conditions):
-			self.conditions[key] = TSCondition()
-		return self.conditions[key]
-
 	# get information about replication and about genemic expression (if provided)
-	def getReplication(self, gn=None):
-		tps = list(self.getTimePoints())
+	def getReplication(self, gn=None, force_convert=None):
+		tps = list(self.getTimePoints(force_convert))
 		if (len(tps) == 0):
 			return []
 		counts = collections.Counter(tps)
@@ -191,6 +227,26 @@ class TSData(object):
 			if (len(exp_split) > 1):
 				rep['std'] = np.std(exp_split, ddof=1)
 		return reps
+
+	def fix(self):
+		# sort series metadata : by seriesname / time
+		# time in order
+		self.df_meta.sort_values(by=['CID','Time'], axis=1, inplace=True)
+		# sort samples in order
+		self.df = self.df[ self.df_meta.columns ]
+		# last: check validation of datatable top-column
+		self.df.index.name = self.df.index.name.replace('#','_')
+		idx=self.df.index.tolist()
+		for i in range(len(idx)):
+			idx[i] = idx[i].replace('#','_')
+		self.df.index = idx
+
+	def getCondition(self, key=None):
+		if (key is None):
+			return self.conditions.items()[0][1]
+		if (key not in self.conditions):
+			self.conditions[key] = TSCondition()
+		return self.conditions[key]
 
 	def removeCondition(self, key):
 		if (key in self.conditions):
@@ -638,3 +694,25 @@ def load(fpath):
 	tsd = TSData()
 	tsd.load(fpath)
 	return tsd
+
+
+
+
+
+if __name__=="__main__":
+	import argparse
+	parser = argparse.ArgumentParser(description='Process TSData.')
+	parser.add_argument('command', type=str, default='open',
+			help='open / fix')
+	parser.add_argument('file', type=str, help='file for command')
+	args = parser.parse_args()
+	if (args.command == 'open'):
+		tsd = load(args.file)
+		print tsd
+	elif (args.command == 'fix'):
+		tsd = load(args.file)
+		print 'fixing time order / name / etc ...'
+		tsd.fix()
+		tsd.save()
+	else:
+		parser.print_help()
