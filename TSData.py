@@ -80,6 +80,7 @@ class TSCondition(object):
 		self.ecotype = None
 		self.age = None
 		self.stress = []		# kind of 'tag'
+		self.exception = False	# is it 'true' timeseries, or just control/stress?
 
 	def __repr__(self):
 		return json.dumps(self.Get())
@@ -94,6 +95,7 @@ class TSCondition(object):
 			'genotype': self.genotype,
 			'ecotype': self.ecotype,
 			'stress': self.stress,
+			'exception': self.stress,
 			}
 
 	# load from json dict array
@@ -105,9 +107,30 @@ class TSCondition(object):
 		self.genotype = d['genotype']
 		self.ecotype = d['ecotype']
 		self.stress = d['stress']
+		if ('exception' in d):
+			self.exception = d['exception']
 
 	def SetStress(self, value):
 		self.stress = value.split(',')
+
+	# use only in case of None value isn't supported
+	def FillNaN(self):
+		if (self.age == None):
+			self.age = ''
+		if (self.species == None):
+			self.species = ''
+		if (self.tissue == None):
+			self.tissue = ''
+		if (self.datatype == None):
+			self.datatype = ''
+		if (self.genotype == None):
+			self.genotype = ''
+		if (self.ecotype == None):
+			self.ecotype = ''
+		if (self.stress == None):
+			self.stress = []
+		if (self.exception == None):
+			self.exception = ''
 
 
 ##
@@ -235,7 +258,8 @@ class TSData(object):
 		# sort samples in order
 		self.df = self.df[ self.df_meta.columns ]
 		# last: check validation of datatable top-column
-		self.df.index.name = self.df.index.name.replace('#','_')
+		if (self.df.index.name):
+			self.df.index.name = self.df.index.name.replace('#','_')
 		idx=self.df.index.tolist()
 		for i in range(len(idx)):
 			idx[i] = idx[i].replace('#','_')
