@@ -186,9 +186,9 @@ class TSData(object):
 		return self.df_meta.iloc[0]
 
 	# if force_convert=='integer', all item is converted into sequential integer number.
-	#   ex) 0, 0, later, later, last, last --> 0, 0, 1, 1, 2, 1
+	#	ex) 0, 0, later, later, last, last --> 0, 0, 1, 1, 2, 1
 	# if force_convert=='string', all item is converted into readable string.
-	#   ex) 0, 60, 120 --> 0, 1h, 2h
+	#	ex) 0, 60, 120 --> 0, 1h, 2h
 	def getTimePoints(self, force_convert=None):
 		if (force_convert == 'integer'):
 			i = 0
@@ -230,25 +230,25 @@ class TSData(object):
 		counts = collections.Counter(tps)
 		reps = []
 		_tp = ''
+		samples = self.df.columns.tolist()
+		if (gn is not None):
+			exps = list(self.getExpression(gn))
+		cnt_cul = 0
 		for tp in tps:
 			if (_tp != tp):
-				reps.append({'x': tp, 'cnt': counts[tp]})
+				sample_split = samples[cnt_cul:cnt_cul+counts[tp]]
+				rep = {'x': tp, 'cnt': counts[tp], 'samples': sample_split}
+				cnt_cul += counts[tp]
+				if (gn is not None):
+					exp_split = exps[cnt_cul:cnt_cul+rep['cnt']]
+					rep['avg'] = np.mean(exp_split)
+					rep['min'] = np.min(exp_split)
+					rep['max'] = np.max(exp_split)
+					rep['std'] = 0
+					if (len(exp_split) > 1):
+						rep['std'] = np.std(exp_split, ddof=1)
+				reps.append(rep)
 				_tp = tp
-		if (gn is None):
-			return reps
-		# in case of gene name given,
-		# calculate expression specification.
-		exps = list(self.getExpression(gn))
-		cnt_cul = 0
-		for rep in reps:
-			exp_split = exps[cnt_cul:cnt_cul+rep['cnt']]
-			cnt_cul += rep['cnt']
-			rep['avg'] = np.mean(exp_split)
-			rep['min'] = np.min(exp_split)
-			rep['max'] = np.max(exp_split)
-			rep['std'] = 0
-			if (len(exp_split) > 1):
-				rep['std'] = np.std(exp_split, ddof=1)
 		return reps
 
 	def fix(self):
@@ -524,7 +524,6 @@ class TSData(object):
 		# use result
 		self.df = n_df
 		self.df_meta = n_dfh
-		print self.df_meta
 
 	def rescale_replication(self):
 		raise Exception("replication rescaling is not supported now!")
