@@ -247,14 +247,15 @@ def do_DEG_per_timepoint(tsl, strict_rep=False):
 
 def _do_limma(tsd):
     # calculate design matrix
-    df_model = modelmatrix( tsd.df_meta.loc['Stress'] )
+    df_model = modelmatrix( tsd.df_meta.loc['Time'] )
+    df_model[df_model.columns[0]] = 1       # REAL design matrix
     # run rscript
     importr('limma')
     r_df = pandas2ri.py2ri(tsd.df)
     r_df_design = pandas2ri.py2ri(df_model)
     r_fit = r['lmFit'](r_df, r_df_design)
     r_fit = r['eBayes'](r_fit)
-    r_fit = r['topTable'](r_fit, coef=1, adjust='fdr', n=np.inf)
+    r_fit = r['topTable'](r_fit, coef=2, adjust="fdr", n=np.inf)
 
     # use columns: adj.P.Val, t
     r_idx = r_fit.rownames
@@ -267,6 +268,10 @@ def _do_limma(tsd):
     df_tval = df_tval.reindex(index = tsd.df.index)
     return {'pvalue':df_pval, 'tvalue':df_tval}
 def do_limma(tsl):
+    # COMMENT:
+    # when appending new Series to previous pandas dataframe,
+    # 1. when dataframe is empty --> All data is saved properly
+    # 2. when already filled dataframe --> left-joined (some data may be removed)
     if (type(tsl) is TSData):
         return _do_limma(tsl)
     else:
