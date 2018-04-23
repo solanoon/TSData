@@ -68,6 +68,55 @@ def convertTime2Str(i):
     return ' '.join(r)
 
 
+#
+# gene matrix refiner
+# ( internally used in TSData::readmatrix() )
+#
+class GeneMatrix(pd.DataFrame):
+    def __init__(self):
+        super(GeneMatrix, self).__init__()
+        self._files_read = []
+        self._refine_columns = False
+        self._refine_index = False
+
+    def load_from_path(self, path, sep=','):
+        if (path not in self._files_read):
+            df = pd.read_csv(path, index_col=0, sep=sep)
+            self.load_from_df(df)
+            self._files_read.append(path)
+
+    def load_from_df(self, df):
+        if (self._refine_columns):
+            l = [x.replace('.CEL.gz','') for x in df.columns.tolist()]
+            for i in range(len(l)):
+                if (l[i][:3] == "GSM"):
+                    l[i] = l[i].split('_',1)[0]
+            df.columns = l
+        if (self._refine_index):
+            df.index = [x.split('_',1)[0] for x in df.index.tolist()]
+        print df.columns
+        self[df.columns] = df
+        #self = pd.concat( (self,df), axis=1 )
+
+    def set_refine_columns(self, v=True):
+        self._refine_columns = v
+
+    def set_refine_index(self, v=True):
+        self._refine_index = v
+
+    def reindex_from_listfile(self, fp):
+        with open(fp,'r') as f:
+            l = f.read().strip().split('\n')
+        self = self.reindex(l)
+
+    def reindex_from_df(self, df):
+        self = self.reindex(df.index)
+
+    # it's no-inplace function
+    def drop_duplicated_index(self):
+        return self[~self.index.duplicated(keep='first')]
+
+
 # (DEPRECIATED method)
 class TSCondition(object):
     def __init__(self):
@@ -428,9 +477,8 @@ class TSData(object):
         if (not self.df.empty):
             if (len(self.df.columns) != len(self.df_meta.columns)):
                 raise Exception('DataHeader and DataMatrix column count is different!')
-
         # check and rematch column order
-        self.df.reindex( self.df_meta.columns )
+        #self.df = self.df[ self.df_meta.columns ]
         # fix order / wrong character
         #self.fix()
 
@@ -459,37 +507,28 @@ class TSData(object):
             f.write('###TSData,0.2\n')
             f.write( json.dumps(self.metadata )+'\n' )
             f.write('###TSDataHeader\n')
-            f.write( self.df_meta.to_csv() )
+            f.write( self.df_meta.to_csv(encoding="utf-8") )
             if (not self.df.empty):   # only add matrix data if dataframe exists
                 f.write('###TSDataMatrix\n')
-                f.write( self.df.to_csv() ) 
+                f.write( self.df.to_csv(encoding="utf-8") ) 
             f.close()
         return True
 
-    def readmatrix(self):
-        def _readmatrix(fp):
-            return pd.read_csv(fp, sep=',', index_col=0)
+    def readmatrix(self, fix_genename=True):
+        df_g = GeneMatrix()
 
-        # initialize
-        self.df = None  # clear current dataframe(mRNA, etc ...) matrix
-        df_datas = {}   # key: filepath, value: numpy value
-
-        # TODO: before reading, preprocess & read matrix files
+        # TODO: before reading, preprocess & read matrix files ...?
         for c in self.df_meta.columns:
             fp = self.df_meta[c]['Filepath']
-            if (fp not in df_datas):
-                df_datas[fp] = _readmatrixfile(fp)
-        for c in self.df_meta.columns:
-            # fetch single data column
-            df = df_datas[ self.df_meta[c]['Filepath'] ]
-            # if first dataframe, then just insert it raw
-            # TODO: if not, then 1.reorder index(check sanity) and 2.concat 
-            if (self.df == None):
-                self.df = df
-            else:
-                assert(len(self.df.index) == len(df.index))
-                #df = df.reorder(self.df.index)
-                self.df = pd.concat([self.df, df], axis=1)
+            if (fp == None or pd.isnull(fp)):
+                print '[WARNING] %s filepath is NaN. Canceled.' % c
+                return
+            df_g.load_from_path(fp)
+        self.df = df_g[self.df_meta.columns]
+
+    def readmatrix_from_matrix(self, df_mat):
+        # set df with given matrix (samplename x genename)
+        self.df = df_mat[ self.df_meta.columns ]
 
     # @description clear myself.
     def clear(self):
@@ -508,7 +547,9 @@ class TSData(object):
         return list(set(self.df_meta.loc['SeriesID']))
     # @description get SampleIDs
     def GetSampleIDs(self):
-        return list(self.df_meta.index)
+        return list(self.df_meta.columns)
+    def get_index(self):
+        return self.df.index.tolist()
     def GetGeneCount(self):
         return len(self.df.index)
     def IsTSExists(self, tsname):
