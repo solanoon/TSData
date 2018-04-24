@@ -155,9 +155,10 @@ class TSLoader(list):
         logic = np.logical_and.reduce( logics )
         # then check replication test
         if ('MinRepCnt' in self.filters):
-            minrepcnt = int(filter_metadata['MinRepCnt'])
+            minrepcnt = int(self.filters['MinRepCnt'])
             df_rep = tsd.getSeries()
-            logic_minrep = (df_rep.loc['repcnt'] < minrepcnt)
+            logic_minrep_group = (df_rep.loc['count'] >= minrepcnt)
+            logic_minrep = [ logic_minrep_group[x] for x in tsd.df_meta.loc['SeriesID'].tolist() ]
             logic = np.logical_and(logic, logic_minrep)
         if ('ExpExist' in self.filters):
             logic = logic & tsd.df.empty
@@ -259,7 +260,8 @@ def _do_limma(tsd):
 
     # use columns: adj.P.Val, t
     r_idx = r_fit.rownames
-    c_pval = r_fit.rx2('adj.P.Val')
+    #c_pval = r_fit.rx2('adj.P.Val')
+    c_pval = r_fit.rx2('P.Value')
     c_tval = r_fit.rx2('t')
     df_pval = pd.Series( c_pval, index=r_idx )
     df_tval = pd.Series( c_tval, index=r_idx )
@@ -331,3 +333,11 @@ def modelmatrix(table, axis=0, factor_list=None):
 
 def compile_tfrecord(tsl):
     raise Exception('NotImplemented')
+
+def batch(batch_size, np_arrs, dim=0):
+    # COMMENT: all numpy arrays should have same row count
+    idx = np.random.randint(np_arrs[0].shape[dim], size=batch_size)
+    if (dim == 0):
+        return [x[idx,:] for x in np_arrs]
+    else:
+        return [x[:,idx] for x in np_arrs]
