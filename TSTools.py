@@ -155,10 +155,11 @@ class TSLoader(list):
         logic = np.logical_and.reduce( logics )
         # then check replication test
         if ('MinRepCnt' in self.filters):
+            # COMMENT: must match name with getSeries() dataframe column
             minrepcnt = int(self.filters['MinRepCnt'])
-            df_rep = tsd.getSeries()
-            logic_minrep_group = (df_rep.loc['count'] >= minrepcnt)
-            logic_minrep = [ logic_minrep_group[x] for x in tsd.df_meta.loc['SeriesID'].tolist() ]
+            df_rep = tsd.getSeries().loc['count']
+            logic_minrep_group = (df_rep >= minrepcnt)
+            logic_minrep = [ logic_minrep_group[x[0]+'_'+x[1]] for x in zip(tsd.df_meta.loc['SeriesID'].tolist(),tsd.df_meta.loc['Time'].tolist()) ]
             logic = np.logical_and(logic, logic_minrep)
         if ('ExpExist' in self.filters):
             logic = logic & tsd.df.empty
@@ -246,7 +247,7 @@ def do_DEG_per_timepoint(tsl, strict_rep=False):
         return {'pvalue':r_pv, 'tvalue':r_tv}
 
 
-def _do_limma(tsd):
+def _do_limma(tsd, pval_mode='adj.P.Val'):
     # calculate design matrix
     df_model = modelmatrix( tsd.df_meta.loc['Time'] )
     df_model[df_model.columns[0]] = 1       # REAL design matrix
@@ -260,8 +261,7 @@ def _do_limma(tsd):
 
     # use columns: adj.P.Val, t
     r_idx = r_fit.rownames
-    #c_pval = r_fit.rx2('adj.P.Val')
-    c_pval = r_fit.rx2('P.Value')
+    c_pval = r_fit.rx2(pval_mode)
     c_tval = r_fit.rx2('t')
     df_pval = pd.Series( c_pval, index=r_idx )
     df_tval = pd.Series( c_tval, index=r_idx )
@@ -269,7 +269,8 @@ def _do_limma(tsd):
     df_pval = df_pval.reindex(index = tsd.df.index)
     df_tval = df_tval.reindex(index = tsd.df.index)
     return {'pvalue':df_pval, 'tvalue':df_tval}
-def do_limma(tsl):
+# adj.P.Val or P.Value
+def do_limma(tsl, pval_mode='adj.P.Val'):
     # COMMENT:
     # when appending new Series to previous pandas dataframe,
     # 1. when dataframe is empty --> All data is saved properly
@@ -280,7 +281,7 @@ def do_limma(tsl):
         df_pv = pd.DataFrame()
         df_tv = pd.DataFrame()
         for tsd in tsl:
-            d = _do_limma(tsd)
+            d = _do_limma(tsd, pval_mode)
             df_pv[tsd.metadata['name']] = d['pvalue']
             df_tv[tsd.metadata['name']] = d['tvalue']
         return {'pvalue':df_pv, 'tvalue':df_tv}
@@ -292,19 +293,30 @@ def do_DESeq(tsl):
 
 
 # DEG with foldchange with t-value (TODO: max - min ?)
-def _do_DEG_FC(tsd):
-    samples = tsd.df
-    samples_updown = samples[:,-1] - samples[:,0]
+def _do_DEG_FC(tsd, fc=0.6):
+    # get all time series
+    # and get average of these std.
+    series = tsd.getSeries()
+    samples_first = np.mean( tsd.df[series.loc["samples"][0].split(',')] ,axis=1)
+    samples_last = np.mean( tsd.df[series.loc["samples"][-1].split(',')] ,axis=1)
+    series_FC = samples_last - samples_first
+    #print series_FC[:20]
+    df_pv = pd.Series(fc / np.abs(series_FC) * 0.05, index=tsd.df.index)
+    #print df_pv
+    df_tv = pd.Series(series_FC, index=tsd.df.index)
     #samples_std = np.std(samples, axis=1, ddof=1)
-    return samples
-def do_DEG_FC(tsl):
+    return {'pvalue': df_pv, 'tvalue': df_tv}
+def do_DEG_FC(tsl, fc=0.6):
     if (type(tsl) is TSData):
-        return _do_DEG_FC(tsl)
+        return _do_DEG_FC(tsl, fc)
     else:
-        r = pd.DataFrame()
+        df_pv = pd.DataFrame()
+        df_tv = pd.DataFrame()
         for tsd in tsl:
-            r[tsd.metadata['name']] = _do_DEG_FC(tsd)
-        return r
+            d = _do_DEG_FC(tsd, fc)
+            df_pv[tsd.metadata['name']] = d['pvalue']
+            df_tv[tsd.metadata['name']] = d['tvalue']
+        return {'pvalue':df_pv, 'tvalue':df_tv}
 
 
 # creates design matrix

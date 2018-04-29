@@ -339,7 +339,7 @@ class TSData(object):
             if (df_expr_split.shape[1] > 1):
                 _std = np.std(df_expr_split, ddof=1)
             # add new record
-            df_rep[k[0]] = [
+            df_rep[k[0]+'_'+k[1]] = [
                 cnt, time, _avg, _min, _max, _std, sample_str
                 ]
         return df_rep
