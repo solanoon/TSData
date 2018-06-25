@@ -69,12 +69,12 @@ def convertTime2Str(i):
 
 
 #
-# gene matrix refiner
+# gene matrix refiner           基因矩阵精炼
 # ( internally used in TSData::readmatrix() )
 #
-class GeneMatrix(pd.DataFrame):
-    def __init__(self):
-        super(GeneMatrix, self).__init__()
+class GeneMatrix(pd.DataFrame):     #pandas数据
+    def __init__(self):             #__init__用于初始化一个类，self是类的实例
+        super(GeneMatrix, self).__init__()  
         self._files_read = []
         self._refine_columns = False
         self._refine_index = False
