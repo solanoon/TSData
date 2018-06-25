@@ -1,71 +1,71 @@
-import numpy as np
-import pandas as pd
-import json
-import os
-from io import StringIO
-import collections
+import numpy as np     #numpy是提供矩阵运算的库
+import pandas as pd    #基于numpy，内含dataframe和series两种数据
+import json            #json是一种轻量级的数据交换格式，易于人阅读和编写
+import os              #os模块包含普遍的操作系统功能
+from io import StringIO   #io模块是用来处理各种类型的I/O操作流
+import collections        #collections提供了许多有用的集合类
 
 ##
 # description about TSData format
-# (first line: JSON formatted metadatas)
-# (from second line: tabled data of metadata)
+# (first line: JSON formatted metadatas)         第一行 json编码的元数据
+# (from second line: tabled data of metadata)    第二行起 表格数据
 #
-# Timeseries Metadata: Time,SampleID,CID,Offset
+# Timeseries Metadata: Time,SampleID,CID,Offset   时间序列元数据-时间，样本id，CID，弥补(?)
 #
-# Series: Package of multiple(or single) condition(s).
+# Series: Package of multiple(or single) condition(s).               series: 单一/多个条件
 #
-# 1. all conditions should have same index
-# 2. time column not have be the same one (between conditions).
-# 3. one file can have multiple 'series' ( can see series names in GetSeries() )
-# 4. meta / event data should be in 'series' metadata.
-# 5. replication event - just need to be in same 'time'.
+# 1. all conditions should have same index                           所有的条件 指数一致
+# 2. time column not have be the same one (between conditions).      时间行不同一
+# 3. one file can have multiple 'series' ( can see series names in GetSeries() )    一个文件可以有很多series
+# 4. meta / event data should be in 'series' metadata.               元/事件 数据需在‘series’元数据里
+# 5. replication event - just need to be in same 'time'.             republication事件需‘时间’相同
 #
 
 ##
-# general utility
+# general utility    一般效用
 #
 
-# @description: Get time data in hours
-def GetTSFromString(s):
-    s = s.strip()
-    if (s[-1] == 's'):
+# @description: Get time data in hours     获取时间信息
+def GetTSFromString(s):                    #定义函数s
+    s = s.strip()                          #用于移除字符串头尾指定的字符
+    if (s[-1] == 's'):                     #结尾是s/负数
         s = s[:-1]  # days, months...
     if (s[-1] == 'm'):
         return float(s[:-1]) / 60.0
-    elif (s[-3:] == 'min'):
+    elif (s[-3:] == 'min'):                #结尾的三个字符是min->变换成小时
         return float(s[:-3]) / 60.0
     elif (s[-1] == 'h'):
         return float(s[:-1])
-    elif (s[-4:] == 'hour'):
+    elif (s[-4:] == 'hour'):               #单位是小时hour则保持不变
         return float(s[:-4])
     elif (s[-1] == 'D' or s[-1] == 'd'):
         return float(s[:-1]) * 60
     elif (s[-3:] == 'day'):
         return float(s[:-3]) * 60
     elif (s[-1] == 'M'):
-        return float(s[:-1]) * 60 * 30
+        return float(s[:-1]) * 60 * 30     #这三个elif不太理解 难道不是x24x30吗
     else:
         return float(s)
         #raise Exception("Cannot extract time info from string: %s" % s)
 
 def GetRepFromString(s):
-    raise Exception("Cannot extract replication from string: %s" % s)
+    raise Exception("Cannot extract replication from string: %s" % s)    #raise引发exception异常
 
 def convertTime2Int(l):
-    return [GetTSFromString(e) for e in l]
+    return [GetTSFromString(e) for e in l]    #将时间数据的格式转换成int形式
 
 def convertTime2Str(i):
     # per hour
     r = []
     if (i > 24):
-        r.append(str(int(i/24))+'d')
+        r.append(str(int(i/24))+'d')     #输入的数据若大于24，则转换为天数并在后面加d
         i = i % 24
     if (i >= 1):
-        r.append(str(int(i))+'h')
+        r.append(str(int(i))+'h')        #输入的数据在1-24之间则在后面加h
         i = i % 1
     if (i > 0):
-        r.append(str(int(i*60))+'m')
-    return ' '.join(r)
+        r.append(str(int(i*60))+'m')     #输入的数据在0-1之间则乘60(?)+m
+    return ' '.join(r)                   #将空格和r字符串相连
 
 
 #
